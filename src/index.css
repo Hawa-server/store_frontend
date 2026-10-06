@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@theme {
+  --color-*: initial;
+
+  --color-bg: #faf7f2;
+  --color-text: #1f1b16;
+  --color-surface: #ffffff;
+  --color-accent: #b24c3b;
+  --color-accent-dark: #8e3a2c;
+  --color-gold: #b8893e;
+  --color-text-body: #3f382f;
+  --color-text-muted: #5e554b;
+  --color-placeholder: #6b6157;
+  --color-border: #e8e2d9;
+  --color-input-border: #d8cfc3;
+  --color-disabled: #f1ece4;
+  --color-admin-bg: #f4f0ea;
+  --color-admin-active: #3a332b;
+  --color-on-accent: #ffffff;
+
+  --color-footer: #1f1b16;
+  --color-on-footer: #faf7f2;
+  --color-scrim: #1f1b16;
+  --color-hero-text: #faf7f2;
+  --color-hero-eyebrow: #f1ddd8;
+
+  --color-tint-bags: #e9dfd3;
+  --color-tint-makeup: #f1ddd8;
+  --color-tint-skincare: #dde9e6;
+  --color-tint-jewellery: #efe6d2;
+  --color-tint-accessories: #e3e4dc;
+  --color-tint-perfumes: #efe3ec;
+  --color-tint-default: #efe9e0;
+
+  --color-status-pending-bg: #f9f1e3;
+  --color-status-pending-text: #7a5a1e;
+  --color-status-shipped-bg: #e3ecf6;
+  --color-status-shipped-text: #244c75;
+  --color-status-success-bg: #e6efe3;
+  --color-status-success-text: #2f5a2a;
+  --color-status-cancelled-bg: #efe9e0;
+  --color-status-cancelled-text: #5e554b;
+  --color-status-alert-bg: #f6e3df;
+  --color-status-alert-text: #8e3a2c;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  --radius-field: 10px;
+  --radius-card: 20px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #17130f;
+  --color-text: #f3eee6;
+  --color-surface: #221d18;
+  --color-accent: #e07a66;
+  --color-accent-dark: #f09a87;
+  --color-gold: #d4a85a;
+  --color-text-body: #dcd3c7;
+  --color-text-muted: #b3a897;
+  --color-placeholder: #9c907f;
+  --color-border: #3a322a;
+  --color-input-border: #4a4036;
+  --color-disabled: #2c261f;
+  --color-admin-bg: #120f0c;
+  --color-admin-active: #3a332b;
+  --color-on-accent: #17130f;
+
+  --color-footer: #0f0c0a;
+
+  --color-tint-bags: #3a3026;
+  --color-tint-makeup: #3d2a2a;
+  --color-tint-skincare: #243532;
+  --color-tint-jewellery: #3a3322;
+  --color-tint-accessories: #2e302a;
+  --color-tint-perfumes: #352a33;
+  --color-tint-default: #2c261f;
+
+  --color-status-pending-bg: #3a2f1a;
+  --color-status-pending-text: #f0c977;
+  --color-status-shipped-bg: #1d2c3d;
+  --color-status-shipped-text: #9cc4f0;
+  --color-status-success-bg: #1f3320;
+  --color-status-success-text: #9fd49a;
+  --color-status-cancelled-bg: #2c261f;
+  --color-status-cancelled-text: #b3a897;
+  --color-status-alert-bg: #3d2420;
+  --color-status-alert-text: #f2a193;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-bg);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
