@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import PageContainer from "./PageContainer";
 import Logo from "./ui/Logo";
+import { useCurrency } from "../context/CurrencyContext";
 import { useCategories } from "../context/CategoriesContext";
 
 export default function Footer() {
   const { categories } = useCategories();
+  const { settings } = useCurrency();
+  const rate = settings?.usdRate ? ` US$ 1 = GH₵ ${settings.usdRate.toFixed(2)}.` : "";
 
   return (
     <footer className="mt-20 bg-footer text-on-footer lg:mt-28">
@@ -14,7 +17,9 @@ export default function Footer() {
           <p className="mt-3 max-w-sm text-on-footer/85">
             Pay with mobile money. Delivery across Ghana.
           </p>
-          <p className="mt-6 text-sm text-on-footer/70">Prices are in Ghana cedis (GH₵).</p>
+          <p className="mt-6 max-w-sm text-sm text-on-footer/70">
+            Prices are charged in Ghana cedis (GH₵).{rate}
+          </p>
         </div>
 
         {categories.length > 0 && (

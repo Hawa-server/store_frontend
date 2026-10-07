@@ -781,7 +781,7 @@ When logged in:
 ## Done When
 
 - [ ] Register works.
-- [ ] Verification from the Mailtrap link works.
+- [ ] Verification from the Ethereal email link works.
 - [ ] Login works.
 - [ ] Login-code flow works when enabled/requested by the backend.
 - [ ] Logout works.
@@ -947,7 +947,7 @@ Refreshing shows the same order.
 
 - [ ] Successful payment opens the confirmation page.
 - [ ] Confirmation information is correct.
-- [ ] Order email appears in Mailtrap.
+- [ ] Order email appears in Ethereal.
 - [ ] Refresh works.
 - [ ] Invalid token shows not-found.
 
@@ -1400,7 +1400,7 @@ As a guest:
 ## 4. Account
 
 - Register.
-- Verify using Mailtrap.
+- Verify using the Ethereal email.
 - Log in.
 - If login-code authentication is enabled, enter the emailed code.
 - Confirm the guest cart moved into the account.
@@ -1415,7 +1415,7 @@ As a guest:
 - First use a failing test payment.
 - Then use a working test payment.
 - Show the confirmation page.
-- Show the email in Mailtrap.
+- Show the email in Ethereal.
 
 ## 7. Admin Order Flow
 

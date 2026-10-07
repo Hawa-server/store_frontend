@@ -1,10 +1,17 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Img from "./Img";
 import StockBadge from "./StockBadge";
-import { formatGhs, ikSrcSet, ikUrl, tintClass } from "../lib/format";
+import AddToCartButton from "./AddToCartButton";
+import { FieldError } from "./form/TextField";
+import { ikSrcSet, ikUrl, tintClass } from "../lib/format";
+import { useMoney } from "../lib/money";
+import StarRating from "./reviews/StarRating";
 
 export default function ProductCard({ product }) {
   const image = product.mainImage;
+  const money = useMoney();
+  const [error, setError] = useState(null);
 
   return (
     <article className="group relative flex w-full flex-col rounded-card outline-offset-4 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-accent">
@@ -35,7 +42,26 @@ export default function ProductCard({ product }) {
             {product.name}
           </Link>
         </h3>
-        <p className="mt-auto pt-2 text-lg font-bold">{formatGhs(product.priceGhs)}</p>
+        {product.rating?.count > 0 && (
+          <StarRating
+            rating={product.rating.average}
+            count={product.rating.count}
+            size="sm"
+            label="compact"
+            className="mt-1.5"
+          />
+        )}
+        <div className="mt-auto flex flex-col gap-3 pt-2 xl:flex-row xl:items-center xl:justify-between xl:gap-2">
+          <p className="text-lg font-bold whitespace-nowrap">
+            {money({ ghs: product.priceGhs, usd: product.priceUsd })}
+          </p>
+          <AddToCartButton
+            product={product}
+            onError={(err) => setError(err?.message ?? null)}
+            className="relative z-10 w-full xl:w-auto"
+          />
+        </div>
+        <FieldError id={`card-error-${product.id}`}>{error}</FieldError>
       </div>
     </article>
   );

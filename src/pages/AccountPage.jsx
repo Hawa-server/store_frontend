@@ -1,4 +1,5 @@
-import { LogOut, Mail, User } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ChevronRight, LayoutDashboard, LogOut, Mail, Package, User } from "lucide-react";
 import Button from "../components/Button";
 import PageContainer from "../components/PageContainer";
 import ErrorMessage from "../components/ErrorMessage";
@@ -16,7 +17,7 @@ function Detail({ icon: Icon, label, value }) {
       </span>
       <div className="min-w-0">
         <dt className="text-sm text-text-muted">{label}</dt>
-        <dd className="mt-0.5 font-semibold break-words">{value}</dd>
+        <dd className="mt-0.5 font-semibold wrap-break-word">{value}</dd>
       </div>
     </div>
   );
@@ -24,7 +25,7 @@ function Detail({ icon: Icon, label, value }) {
 
 export default function AccountPage() {
   useDocumentTitle("Your account");
-  const { logout, loggingOut } = useAuth();
+  const { user: sessionUser, logout, loggingOut } = useAuth();
   const { data, error, loading, reload } = useApi("/api/auth/me");
   const user = data?.user;
 
@@ -59,6 +60,27 @@ export default function AccountPage() {
             </section>
           )}
         </div>
+
+        <nav aria-label="Account" className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Link
+            to="/orders"
+            className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-surface px-5 py-4 font-semibold transition-colors hover:border-text"
+          >
+            <Package className="size-5" strokeWidth={1.6} aria-hidden="true" />
+            <span className="flex-1">My orders</span>
+            <ChevronRight className="size-4 text-text-muted" aria-hidden="true" />
+          </Link>
+          {sessionUser?.isAdmin && (
+            <Link
+              to="/admin"
+              className="flex min-h-16 items-center gap-4 rounded-card border border-border bg-surface px-5 py-4 font-semibold transition-colors hover:border-text"
+            >
+              <LayoutDashboard className="size-5" strokeWidth={1.6} aria-hidden="true" />
+              <span className="flex-1">Store admin</span>
+              <ChevronRight className="size-4 text-text-muted" aria-hidden="true" />
+            </Link>
+          )}
+        </nav>
 
         <Button variant="secondary" onClick={logout} disabled={loggingOut} className="mt-8">
           <LogOut className="size-4.5" aria-hidden="true" />
