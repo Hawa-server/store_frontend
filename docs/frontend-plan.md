@@ -604,7 +604,7 @@ VITE_PAYSTACK_PUBLIC_KEY=
 ### Same-site setup (required)
 
 - **Development:** in `vite.config.js`, proxy `/api` to `http://localhost:5000`, and leave `VITE_API_URL` empty, so requests go to `/api` on the Vite server.
-- **Production (Render static site):** add a rewrite rule from `/api/*` to `https://<backend>.onrender.com/api/*` (check Render's docs for rewriting to an external address), plus a rewrite from `/*` to `/index.html` so React Router's pages work on refresh. Leave `VITE_API_URL` empty.
+- **Production (Vercel):** `vercel.json` rewrites `/api/*` to `https://adorn-api.onrender.com/api/*`, plus `/*` to `/index.html` so React Router's pages work on refresh. Leave `VITE_API_URL` empty.
 - Never call the backend's `onrender.com` address directly from the browser.
 
 ### Header
