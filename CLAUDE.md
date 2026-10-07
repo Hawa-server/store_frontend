@@ -12,7 +12,7 @@ The React frontend for a small online **fashion and beauty store** (bags, makeup
 
 - **Stack:** React, Vite, React Router, Tailwind CSS (official Vite plugin), and the Paystack popup (public key only). Don't add other libraries without asking.
 - **If the plan and `docs/api.md` disagree, `docs/api.md` wins:** it describes the backend as actually built.
-- **One shared API helper** for every request. It reads `VITE_API_URL` (normally empty, so requests go to `/api` on the same site through the Vite proxy or Render's rewrite; never call the backend's address directly), sends cookies (`credentials: "include"`), and sends `X-Requested-With: XMLHttpRequest` on every request (the backend rejects changes without it).
+- **One shared API helper** for every request. It reads `VITE_API_URL` (normally empty, so requests go to `/api` on the same site through the Vite proxy or the `vercel.json` rewrite; never call the backend's address directly), sends cookies (`credentials: "include"`), and sends `X-Requested-With: XMLHttpRequest` on every request (the backend rejects changes without it).
 - **The backend is in charge:** never calculate prices, totals, currency conversion, or refund amounts, and never treat a UI state (like the Paystack popup closing) as proof of anything.
 - **Errors:** show the backend's `error.message`, and show `error.fields` next to their form inputs. On `401`, send the user to login and back afterwards; on `403`, show "You don't have access to this page."
 - **Money** is always labelled "GH₵" or "US$," never a plain "$."
