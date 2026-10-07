@@ -1,7 +1,7 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./components/Root";
 import Layout from "./components/Layout";
-import AdminLayout from "./components/admin/AdminLayout";
 import RequireAuth from "./components/RequireAuth";
 import HomePage from "./pages/HomePage";
 import ProductListPage from "./pages/ProductListPage";
@@ -17,15 +17,27 @@ import CheckoutCompletePage from "./pages/CheckoutCompletePage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
-import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
-import AdminOrderPage from "./pages/admin/AdminOrderPage";
-import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CategoriesProvider } from "./context/CategoriesContext";
 import { CartProvider } from "./context/CartContext";
 import { AnnouncerProvider } from "./context/AnnouncerContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
+
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
+const AdminOrderPage = lazy(() => import("./pages/admin/AdminOrderPage"));
+const AdminReviewsPage = lazy(() => import("./pages/admin/AdminReviewsPage"));
+const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
+const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
+const AdminProductFormPage = lazy(() => import("./pages/admin/AdminProductFormPage"));
+
+function AdminLoading() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-admin-bg text-text-muted" role="status">
+      Loading admin…
+    </div>
+  );
+}
 
 const loggedIn = (element) => <RequireAuth>{element}</RequireAuth>;
 
@@ -55,11 +67,18 @@ const router = createBrowserRouter([
       },
       {
         path: "/admin",
-        element: <AdminLayout />,
+        element: (
+          <Suspense fallback={<AdminLoading />}>
+            <AdminLayout />
+          </Suspense>
+        ),
         children: [
           { index: true, element: <AdminDashboardPage /> },
           { path: "orders", element: <AdminOrdersPage /> },
           { path: "orders/:id", element: <AdminOrderPage /> },
+          { path: "products", element: <AdminProductsPage /> },
+          { path: "products/new", element: <AdminProductFormPage key="new" /> },
+          { path: "products/:id", element: <AdminProductFormPage key="edit" /> },
           { path: "reviews", element: <AdminReviewsPage /> },
         ],
       },

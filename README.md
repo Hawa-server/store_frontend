@@ -22,6 +22,7 @@ This project is only the frontend. It talks to the separate **store backend** (t
 
 - Dashboard: revenue, orders, average order value and refunds for today, the last 7 or 30 days, or all time; recent orders; low-stock alerts with an adjustable threshold; and counts that need attention. A badge in the menu shows how many products are low or out of stock.
 - Orders: filter by status and dates, view details, mark as shipped or delivered, cancel, and make full or partial refunds (with Retry for failed refunds).
+- Products: search and filter every product with its stock, add products (with a photo address from ImageKit), edit prices, stock, details and photos, and hide products from the shop. Stock changes are protected: if a sale changes the stock while you're editing, you're asked to check the number again.
 - Reviews: filter visible or hidden reviews, hide or unhide them (with a reason), or delete them permanently.
 
 ## Tech stack
@@ -120,23 +121,33 @@ Use your Paystack **test** keys. In the Paystack popup, use Paystack's test mobi
 8. **Cancellation:** place another order, cancel it while it's Pending, and check the returned stock on the dashboard.
 9. **Reviews:** write, edit and delete a review; try the sorting and star breakdown. As admin, hide one (the average changes) and delete another.
 
-## Deploying to Render (static site)
+## Deploying to Vercel
 
-1. In Render, create a **Static Site** from this repository.
-   - Build command: `npm install && npm run build`
-   - Publish directory: `dist`
-2. **Before the first build**, add the environment variables:
-   - `VITE_PAYSTACK_PUBLIC_KEY` = your Paystack public key. Vite writes it into the build, so it must be set before building (and the site rebuilt if it changes).
-   - `VITE_API_URL` = leave empty.
-3. Add two **rewrite** rules (Redirects/Rewrites), in this order:
+The frontend is hosted on **Vercel**; the backend stays on **Render** (`https://adorn-api.onrender.com`).
 
-   | Source | Destination | Action |
+1. In Vercel, **Add New → Project** and import this repository. Vercel detects Vite; keep its settings:
+   - Framework preset: **Vite**
+   - Build command: `npm run build`
+   - Output directory: `dist`
+2. **Before the first deploy**, open **Environment Variables** and add:
+   - `VITE_PAYSTACK_PUBLIC_KEY` = your Paystack public key (`pk_test_…` for testing, `pk_live_…` when going live).
+   - `VITE_API_URL` = leave empty, or don't add it at all.
+
+   Vite writes `VITE_` variables into the build, so they must exist **before** building. If you add or change one later, redeploy for it to take effect.
+3. **Deploy.** The rewrites in `vercel.json` are applied automatically:
+
+   | Source | Destination | Why |
    |---|---|---|
-   | `/api/*` | `https://<your-backend>.onrender.com/api/*` | Rewrite |
-   | `/*` | `/index.html` | Rewrite |
+   | `/api/:path*` | `https://adorn-api.onrender.com/api/:path*` | API requests go through the frontend's own address, so the login and cart cookies work in every browser (including Safari, which blocks cookies from other sites) |
+   | `/(.*)` | `/index.html` | React Router's pages load when refreshed or opened from a link |
 
-   The first sends API requests through the frontend's own address, so the login and cart cookies work in every browser (including Safari). The second lets React Router's pages load when refreshed or opened from a link. Never call the backend's `onrender.com` address directly from the app.
-4. **After deploying**, open the backend's settings on Render and change its `CLIENT_URL` to the frontend's live address (for example `https://adorn.onrender.com`), then redeploy the backend. This makes the backend accept requests from the live site and puts the right address in its emails.
+   Never call the backend's `onrender.com` address directly from the app. If the backend's address ever changes, update it in `vercel.json`.
+4. **After the first deploy**, open the backend's settings on Render, change its `CLIENT_URL` to the frontend's live Vercel address (for example `https://adorn.vercel.app`), and redeploy the backend. This makes the backend accept requests from the live site and puts the right address in its emails (verification links, order links).
+
+**Notes**
+
+- Use the production address (the one set as `CLIENT_URL`) for testing. Vercel's preview deployments get their own addresses, which the backend won't recognise, so logins and checkout won't work there.
+- On Render's free plan the backend sleeps when idle, so the first request after a quiet period can take up to a minute. Open `/api/health` on the live site before a demo to wake it up.
 
 ## Project structure
 
@@ -151,7 +162,8 @@ src/
   hooks/                data loading, countdowns, payment confirmation, page titles
   components/           layout, header, footer, buttons, forms, product cards, reviews, checkout, admin layout
   pages/                one file per page; admin pages in pages/admin/
-docs/                   the frontend plan and the backend API reference
+docs/                   the frontend plan, the FE11 spec and the backend API reference
+vercel.json             Vercel rewrites: /api/* to the backend, everything else to index.html
 ```
 
 ## Accessibility, screen sizes and themes

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { ArrowLeft, LayoutDashboard, Menu, MessageSquareText, Package, X } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Menu, MessageSquareText, Package, Tag, X } from "lucide-react";
 import { AdminStatsProvider, useAdminStats } from "../../context/AdminStatsContext";
 import RequireAdmin from "../RequireAdmin";
 import ThemeToggle from "../ThemeToggle";
@@ -9,6 +9,7 @@ import LogoMark from "../ui/LogoMark";
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true, badge: true },
   { to: "/admin/orders", label: "Orders", icon: Package },
+  { to: "/admin/products", label: "Products", icon: Tag },
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
 ];
 
@@ -136,7 +137,9 @@ function Shell() {
 
       <main id="admin-main" ref={mainRef} tabIndex={-1} className="focus:outline-none lg:pl-72">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-          <Outlet />
+          <Suspense fallback={<div className="h-80 animate-pulse rounded-card bg-disabled" aria-hidden="true" />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

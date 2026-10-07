@@ -122,12 +122,12 @@ export default function AdminDashboardPage() {
   const requested = params.get("period");
   const period = PERIODS.some(([value]) => value === requested) ? requested : "7d";
   const { data, error, loading, reload } = useApi(`/api/admin/dashboard?period=${period}`);
-  const { setLowStockCount } = useAdminStats();
+  const { setStock } = useAdminStats();
   const announce = useAnnounce();
 
   useEffect(() => {
-    if (data?.stock) setLowStockCount(data.stock.lowStockCount);
-  }, [data, setLowStockCount]);
+    if (data?.stock) setStock(data.stock);
+  }, [data, setStock]);
 
   if (error?.status === 403) return <AccessDenied />;
 
