@@ -5,6 +5,7 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 export default function NotFoundPage({
   title = "We couldn't find that page",
   message = "The page may have moved, or the link may be wrong. Everything in the shop is still here.",
+  actions,
 }) {
   useDocumentTitle("Not found");
 
@@ -16,10 +17,14 @@ export default function NotFoundPage({
       </h1>
       <p className="mt-5 max-w-md text-lg text-text-body">{message}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Button to="/products">Back to all products</Button>
-        <Button to="/" variant="secondary">
-          Go to the home page
-        </Button>
+        {actions ?? (
+          <>
+            <Button to="/products">Back to all products</Button>
+            <Button to="/" variant="secondary">
+              Go to the home page
+            </Button>
+          </>
+        )}
       </div>
     </PageContainer>
   );

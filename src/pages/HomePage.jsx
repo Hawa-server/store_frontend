@@ -8,6 +8,7 @@ import { useCategories } from "../context/CategoriesContext";
 import { useApi } from "../hooks/useApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { pluralise } from "../lib/format";
+import CurrencySelect from "../components/CurrencySelect";
 
 function firstImageByCategory(products) {
   const images = {};
@@ -43,7 +44,11 @@ export default function HomePage() {
       <HeroSlider />
 
       <PageContainer as="section" aria-labelledby="categories-heading" className="pt-12 lg:pt-20">
-        <SectionHeading id="categories-heading" title="Shop by category" />
+        <SectionHeading
+          id="categories-heading"
+          title="Shop by category"
+          aside={<CurrencySelect className="xl:hidden" />}
+        />
         {categoriesError ? (
           <ErrorMessage error={categoriesError} onRetry={reloadCategories} />
         ) : categoriesLoading ? (

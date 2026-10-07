@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, Package, ShoppingBag, User, X } from "lucide-react";
 import PageContainer from "./PageContainer";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./ui/Logo";
+import CurrencySelect from "./CurrencySelect";
 import { useCategories } from "../context/CategoriesContext";
 import { useCart } from "../context/CartContext";
 import { firstName, useAuth } from "../context/AuthContext";
@@ -23,8 +24,8 @@ function DesktopNav({ items }) {
   const { pathname } = useLocation();
 
   return (
-    <nav aria-label="Categories" className="hidden flex-1 justify-center lg:flex">
-      <ul className="flex items-center gap-1 xl:gap-3">
+    <nav aria-label="Categories" className="hidden flex-1 justify-center xl:flex">
+      <ul className="flex items-center gap-0.5 2xl:gap-3">
         {items.map((item) => {
           const highlight = item.to === "/products" && pathname === "/";
           return (
@@ -79,7 +80,7 @@ function MobileMenu({ items, open, onClose, buttonRef }) {
     <div
       id="mobile-menu"
       ref={panelRef}
-      className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-border bg-bg shadow-lg lg:hidden"
+      className="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-border bg-bg shadow-lg xl:hidden"
     >
       <PageContainer className="py-4">
         <nav aria-label="Categories">
@@ -105,6 +106,7 @@ function MobileMenu({ items, open, onClose, buttonRef }) {
             ))}
           </ul>
         </nav>
+        <CurrencySelect layout="stacked" className="mt-5" />
         <MobileAccount />
       </PageContainer>
     </div>
@@ -134,6 +136,16 @@ function MobileAccount() {
         <User className="size-5" strokeWidth={1.6} aria-hidden="true" />
         Your account
       </Link>
+      <Link to="/orders" className={accountCard}>
+        <Package className="size-5" strokeWidth={1.6} aria-hidden="true" />
+        My orders
+      </Link>
+      {user.isAdmin && (
+        <Link to="/admin" className={accountCard}>
+          <LayoutDashboard className="size-5" strokeWidth={1.6} aria-hidden="true" />
+          Store admin
+        </Link>
+      )}
       <button type="button" onClick={logout} disabled={loggingOut} className={`w-full ${accountCard}`}>
         <LogOut className="size-5" strokeWidth={1.6} aria-hidden="true" />
         {loggingOut ? "Logging out…" : "Log out"}
@@ -194,7 +206,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-bg/95 backdrop-blur-md">
       <PageContainer className="relative flex h-16 items-center lg:h-20">
-        <div className="flex flex-1 lg:hidden">
+        <div className="flex flex-1 xl:hidden">
           <button
             ref={menuButtonRef}
             type="button"
@@ -216,13 +228,14 @@ export default function Header() {
 
         <DesktopNav items={items} />
 
-        <div className="flex flex-1 items-center justify-end gap-0.5 lg:flex-none lg:gap-1">
+        <div className="flex flex-1 items-center justify-end gap-0.5 xl:flex-none xl:gap-1">
+          <CurrencySelect className="mr-1 hidden xl:flex" />
           <DesktopAccount />
           <ThemeToggle />
           <Link to="/cart" className={`${iconButton} -mr-2.5 inline-flex`} aria-label={cartLabel}>
             <ShoppingBag className="size-5.5" strokeWidth={1.6} aria-hidden="true" />
             {itemCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] leading-none font-bold text-on-accent">
+              <span className="absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs leading-none font-bold text-on-accent">
                 {itemCount > 99 ? "99+" : itemCount}
               </span>
             )}

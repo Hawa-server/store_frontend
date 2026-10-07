@@ -7,7 +7,13 @@ import StockBadge from "../components/StockBadge";
 import NotFoundPage from "./NotFoundPage";
 import { useApi } from "../hooks/useApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { formatGhs, ikSrcSet, ikUrl, tintClass } from "../lib/format";
+import QuantityStepper from "../components/QuantityStepper";
+import AddToCartButton from "../components/AddToCartButton";
+import FormAlert from "../components/form/FormAlert";
+import { ikSrcSet, ikUrl, tintClass } from "../lib/format";
+import { useMoney } from "../lib/money";
+import StarRating from "../components/reviews/StarRating";
+import ProductReviews from "../components/reviews/ProductReviews";
 
 function Gallery({ product }) {
   const images = product.images?.length ? product.images : product.mainImage ? [product.mainImage] : [];
@@ -52,6 +58,46 @@ function Gallery({ product }) {
   );
 }
 
+function BuyBox({ product }) {
+  const [quantity, setQuantity] = useState(1);
+  const [result, setResult] = useState(null);
+  const outOfStock = product.stock <= 0;
+
+  return (
+    <div className="mt-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <QuantityStepper
+          value={quantity}
+          onChange={setQuantity}
+          min={1}
+          size="lg"
+          productName={product.name}
+          disabled={outOfStock}
+        />
+        <AddToCartButton
+          product={product}
+          quantity={quantity}
+          size="lg"
+          className="w-full sm:flex-1"
+          onAdded={() => setResult({ tone: "success" })}
+          onError={(error) => setResult(error ? { tone: "error", text: error.message } : null)}
+        />
+      </div>
+      {result?.tone === "success" && (
+        <FormAlert tone="success" className="mt-4">
+          <span className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            Added to cart
+            <Link to="/cart" className="inline-flex min-h-11 items-center underline underline-offset-4">
+              View cart
+            </Link>
+          </span>
+        </FormAlert>
+      )}
+      {result?.tone === "error" && <FormAlert className="mt-4">{result.text}</FormAlert>}
+    </div>
+  );
+}
+
 function ProductSkeleton() {
   return (
     <div className="grid animate-pulse gap-8 lg:grid-cols-2 lg:gap-16" aria-hidden="true">
@@ -70,6 +116,7 @@ export default function ProductPage() {
   const { id } = useParams();
   const { data, error, loading, reload } = useApi(`/api/products/${encodeURIComponent(id)}`);
   const product = data?.product;
+  const money = useMoney();
   useDocumentTitle(product?.name ?? null);
 
   if (error && (error.status === 404 || error.status === 400)) {
@@ -112,9 +159,10 @@ export default function ProductPage() {
       <div className="mt-3 lg:mt-5">
         {error ? (
           <ErrorMessage error={error} onRetry={reload} />
-        ) : loading ? (
+        ) : loading && !product ? (
           <ProductSkeleton />
         ) : (
+          <>
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16">
             <Gallery key={product.id} product={product} />
 
@@ -128,15 +176,29 @@ export default function ProductPage() {
               <h1 className="mt-1 font-display text-4xl leading-[1.05] font-semibold text-balance sm:text-5xl lg:text-6xl">
                 {product.name}
               </h1>
-              <p className="mt-5 text-3xl font-bold lg:mt-7 lg:text-4xl">{formatGhs(product.priceGhs)}</p>
+              {product.rating?.count > 0 && (
+                <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <StarRating rating={product.rating.average} />
+                  <a
+                    href="#reviews"
+                    className="font-medium text-accent underline underline-offset-4 hover:text-accent-dark"
+                  >
+                    {product.rating.count === 1 ? "1 review" : `${product.rating.count} reviews`}
+                  </a>
+                </p>
+              )}
+              <p className="mt-5 text-3xl font-bold lg:mt-7 lg:text-4xl">{money({ ghs: product.priceGhs, usd: product.priceUsd })}</p>
               <div className="mt-4">
                 <StockBadge product={product} variant="pill" />
               </div>
               {product.description && (
                 <p className="mt-6 max-w-prose text-lg leading-relaxed text-text-body">{product.description}</p>
               )}
+              <BuyBox key={product.id} product={product} />
             </div>
           </div>
+          <ProductReviews key={product.id} product={product} onChanged={reload} />
+          </>
         )}
       </div>
     </PageContainer>

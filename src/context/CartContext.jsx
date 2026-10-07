@@ -1,17 +1,22 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const refreshCart = useCallback(async () => {
     try {
       const data = await api("/api/cart");
       setCart(data.cart);
-    } catch {
-      setCart(null);
+      setError(null);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -19,7 +24,43 @@ export function CartProvider({ children }) {
     refreshCart();
   }, [refreshCart]);
 
-  const value = { cart, itemCount: cart?.itemCount ?? 0, refreshCart };
+  const apply = useCallback((data) => {
+    setCart(data.cart);
+    setError(null);
+    return data;
+  }, []);
+
+  const addItem = useCallback(
+    async (productId, quantity) =>
+      apply(await api("/api/cart/items", { method: "POST", body: { productId, quantity } })),
+    [apply],
+  );
+
+  const setQuantity = useCallback(
+    async (lineId, quantity) =>
+      apply(await api(`/api/cart/items/${lineId}`, { method: "PATCH", body: { quantity } })),
+    [apply],
+  );
+
+  const removeItem = useCallback(
+    async (lineId) => apply(await api(`/api/cart/items/${lineId}`, { method: "DELETE" })),
+    [apply],
+  );
+
+  const value = useMemo(
+    () => ({
+      cart,
+      error,
+      loading,
+      itemCount: cart?.itemCount ?? 0,
+      refreshCart,
+      addItem,
+      setQuantity,
+      removeItem,
+    }),
+    [cart, error, loading, refreshCart, addItem, setQuantity, removeItem],
+  );
+
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 

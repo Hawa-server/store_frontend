@@ -14,11 +14,21 @@ export function FieldError({ id, children }) {
   );
 }
 
-export default function TextField({ label, error, hint, className = "", inputClassName = "", children, ...props }) {
+export default function TextField({
+  label,
+  error,
+  hint,
+  multiline = false,
+  className = "",
+  inputClassName = "",
+  children,
+  ...props
+}) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
+  const Control = multiline ? "textarea" : "input";
 
   return (
     <div className={className}>
@@ -26,7 +36,7 @@ export default function TextField({ label, error, hint, className = "", inputCla
         {label}
       </label>
       <div className="relative">
-        <input
+        <Control
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}

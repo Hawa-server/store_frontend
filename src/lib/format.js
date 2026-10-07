@@ -33,3 +33,28 @@ export function tintClass(slug) {
 export function pluralise(count, word) {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
+
+const ghanaDateTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Accra",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+export function formatDateTime(iso) {
+  return ghanaDateTime.format(new Date(iso));
+}
+
+const ghanaDate = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Accra",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+export function formatDate(iso) {
+  return ghanaDate.format(new Date(iso));
+}
