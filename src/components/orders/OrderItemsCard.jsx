@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 import Img from "../Img";
 import { formatGhs, ikUrl } from "../../lib/format";
 
-export default function OrderItemsCard({ order, title = "Items", totalLabel = "Total paid" }) {
+export default function OrderItemsCard({ order, title = "Items", totalLabel = "Total paid", reviewLinks = false }) {
   return (
     <section aria-labelledby="order-items-heading" className="rounded-card border border-border bg-surface p-5 sm:p-7">
       <h2 id="order-items-heading" className="text-xl font-semibold sm:text-2xl">
@@ -23,6 +25,15 @@ export default function OrderItemsCard({ order, title = "Items", totalLabel = "T
               <p className="text-sm text-text-muted">
                 Qty {item.quantity} × {formatGhs(item.unitPriceGhs)}
               </p>
+              {reviewLinks && (
+                <Link
+                  to={`/product/${item.productId}#reviews`}
+                  className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-accent underline underline-offset-4 hover:text-accent-dark"
+                >
+                  <Star className="size-4" aria-hidden="true" />
+                  Review this product<span className="sr-only">: {item.name}</span>
+                </Link>
+              )}
             </div>
             <p className="font-semibold whitespace-nowrap">{formatGhs(item.lineTotalGhs)}</p>
           </li>
