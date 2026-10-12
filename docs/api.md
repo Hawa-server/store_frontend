@@ -15,7 +15,7 @@ This document is the contract between the backend and the React frontend. Every 
 
 All endpoint paths start with `/api`.
 
-**Recommended in production: call the API through your frontend's own domain.** The frontend and the API will be on different sites (for example `…vercel.app` and `…onrender.com`). The login and cart cookies are then "third-party" cookies (`Secure; SameSite=None`), which **Safari and some privacy settings block**, so logins would silently not stick. The simple fix is to let the frontend host forward `/api/*` to the Render address (a "rewrite" on Vercel, a "redirect/proxy" on Netlify, or the Vite dev server `proxy` locally), and call the API with relative URLs such as `fetch('/api/products')`. The cookies then belong to the frontend's own domain and work everywhere.
+**Recommended in production: call the API through your frontend's own domain.** The frontend and the API will be on different sites (for example `…vercel.app` and `…onrender.com`). The login and cart cookies are then "third-party" cookies (`Secure; SameSite=None`), which **Safari and some privacy settings block**, so logins would silently not stick. The fix, used by the deployed frontend: Vercel's `vercel.json` **rewrites** `/api/*` to the Render address (locally, the Vite dev server `proxy` does the same), and the frontend calls the API with relative URLs such as `fetch('/api/products')`. The cookies then belong to the frontend's own domain and work everywhere. (The backend is configured for this with `TRUST_PROXY_HOPS=2`; see the README.)
 
 ### Requests from the browser
 
@@ -470,6 +470,11 @@ Emails a new login code. The old code stops working, and the `loginChallenge` co
 Logs out by clearing the login cookie, the `guestCart` cookie, and any unfinished `loginChallenge` cookie. It always succeeds, even if the user wasn't logged in.
 
 After logout, `GET /api/cart` returns an empty cart, so reset the cart badge to 0. The account cart isn't deleted: it's still saved and comes back at the next login.
+
+**Ask before logging out (frontend).** The endpoint logs out straight away; it can't ask the user anything. So when the user clicks **Log out**, first show a confirmation, e.g. *"Log out of your account?"* with **Log out** and **Cancel** buttons. Call this endpoint only if they confirm. On **Cancel**, do nothing. Then, after a successful logout:
+1. clear the stored user;
+2. reset the cart badge to 0;
+3. go to the home page (or the login page).
 
 - **Login required:** no
 - **Admin required:** no

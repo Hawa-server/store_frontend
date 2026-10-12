@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, EyeOff, LoaderCircle } from "lucide-react";
 import Button from "../Button";
@@ -133,6 +133,15 @@ export default function ProductReviews({ product, onChanged }) {
     load(1, true);
   }, [load, version]);
 
+  const jumped = useRef(false);
+  useEffect(() => {
+    if (jumped.current || location.hash !== "#reviews" || status.loading) return;
+    jumped.current = true;
+    const section = document.getElementById("reviews");
+    section?.scrollIntoView({ block: "start" });
+    document.getElementById("reviews-heading")?.focus({ preventScroll: true });
+  }, [location.hash, status.loading]);
+
   function changed(message) {
     setMode(null);
     setNotice({ tone: "success", text: message });
@@ -162,7 +171,7 @@ export default function ProductReviews({ product, onChanged }) {
   return (
     <section id="reviews" aria-labelledby="reviews-heading" className="mt-16 scroll-mt-28 border-t border-border pt-12 lg:mt-20 lg:pt-16">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 id="reviews-heading" className="font-display text-4xl font-semibold sm:text-5xl">
+        <h2 id="reviews-heading" tabIndex={-1} className="font-display text-4xl font-semibold focus:outline-none sm:text-5xl">
           Reviews
         </h2>
         {summary.count > 0 && (
@@ -209,6 +218,17 @@ export default function ProductReviews({ product, onChanged }) {
             <Button variant="secondary" onClick={() => setMode("write")} className="mt-7 w-full">
               Write a review
             </Button>
+          )}
+          {user && !viewer?.canReview && !myReview && (
+            <p className="mt-6 text-text-body">
+              You can write a review once this product has been delivered to you.{" "}
+              <Link
+                to="/orders"
+                className="font-semibold text-accent underline underline-offset-4 hover:text-accent-dark"
+              >
+                My orders
+              </Link>
+            </p>
           )}
           {!user && (
             <p className="mt-6 text-text-body">

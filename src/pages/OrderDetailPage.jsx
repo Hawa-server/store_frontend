@@ -114,7 +114,7 @@ export default function OrderDetailPage() {
 
           <div className="mt-8 grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
             <div className="space-y-6">
-              <OrderItemsCard order={order} title="Items" />
+              <OrderItemsCard order={order} title="Items" reviewLinks={order.status === "Delivered"} />
 
               {order.refunds.length > 0 && (
                 <section aria-labelledby="refunds-heading" className={card}>
