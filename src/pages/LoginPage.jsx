@@ -40,7 +40,7 @@ function CodeStep({ email, intro, onBack, onLoggedIn }) {
         body: { code },
         authRedirect: false,
       });
-      await onLoggedIn(data.user);
+      await onLoggedIn(data.user, data.linked);
     } catch (err) {
       if (err.status === 401) return onBack(err.message);
       const message = err.fields?.code ?? err.message;
@@ -171,7 +171,7 @@ export default function LoginPage() {
         setCodeStep({ message: data.message });
         setSubmitting(false);
       } else {
-        await login(data.user);
+        await login(data.user, data.linked);
       }
     } catch (error) {
       setFields(error.fields ?? {});

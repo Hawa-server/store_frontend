@@ -7,6 +7,9 @@ import ErrorMessage from "../components/ErrorMessage";
 import TextField from "../components/form/TextField";
 import FormAlert from "../components/form/FormAlert";
 import OrderSummary from "../components/checkout/OrderSummary";
+import DeliveryAreaFields from "../components/checkout/DeliveryAreaFields";
+import { useApi } from "../hooks/useApi";
+import { OTHER_TOWN, deliveryText, findFee, readSavedArea, saveArea } from "../lib/delivery";
 import PaymentStatus from "../components/checkout/PaymentStatus";
 import { api } from "../lib/api";
 import { formatGhs } from "../lib/format";
@@ -38,11 +41,12 @@ function PaymentMethod() {
   );
 }
 
-function DetailsRecap({ form, onEdit, disabled }) {
+function DetailsRecap({ form, checkout, onEdit, disabled }) {
   const rows = [
     ["Full name", form.name],
     ["Phone number", form.phone],
     ["Email", form.email],
+    ["Delivery area", deliveryText(checkout.deliveryRegionName, checkout.deliveryTownName).replace(/^Delivery to: /, "")],
     ["Delivery address", form.address],
   ];
 
@@ -50,7 +54,7 @@ function DetailsRecap({ form, onEdit, disabled }) {
     <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
       <dl className="grid gap-4 sm:grid-cols-2">
         {rows.map(([label, value]) => (
-          <div key={label} className={label === "Delivery address" ? "sm:col-span-2" : ""}>
+          <div key={label} className={label.startsWith("Delivery") ? "sm:col-span-2" : ""}>
             <dt className="text-sm text-text-muted">{label}</dt>
             <dd className="mt-0.5 font-semibold wrap-break-word whitespace-pre-line">{value}</dd>
           </div>
@@ -91,6 +95,9 @@ export default function CheckoutPage() {
   const [checkout, setCheckout] = useState(null);
   const [popup, setPopup] = useState("closed");
   const [popupError, setPopupError] = useState(null);
+  const [area, setArea] = useState({ regionId: "", townKey: "" });
+  const areas = useApi("/api/delivery-areas");
+  const areaRestored = useRef(false);
 
   const prefilled = useRef(false);
   const summaryHeading = useRef(null);
@@ -102,6 +109,18 @@ export default function CheckoutPage() {
     prefilled.current = true;
     setForm((f) => ({ ...f, name: f.name || user.name, email: f.email || user.email }));
   }, [user]);
+
+  useEffect(() => {
+    const regions = areas.data?.regions;
+    if (!user || !regions || areaRestored.current) return;
+    areaRestored.current = true;
+    const saved = readSavedArea();
+    if (!saved) return;
+    const region = regions.find((r) => String(r.id) === String(saved.regionId));
+    if (!region) return;
+    const townOk = saved.townKey === OTHER_TOWN || region.towns.some((t) => String(t.id) === String(saved.townKey));
+    setArea((current) => (current.regionId ? current : { regionId: String(region.id), townKey: townOk ? String(saved.townKey) : "" }));
+  }, [user, areas.data]);
 
   useEffect(() => {
     if (!focusTarget.current) return;
@@ -116,13 +135,27 @@ export default function CheckoutPage() {
   async function createCheckout(event) {
     event?.preventDefault();
     if (submitting) return;
+    const areaErrors = {};
+    if (!area.regionId) areaErrors.deliveryRegionId = "Choose a delivery region.";
+    else if (!area.townKey) areaErrors.deliveryTownId = "Choose a town, or “Other town in this region”.";
+    if (Object.keys(areaErrors).length) {
+      setFields(areaErrors);
+      setFormError({ text: "Please check the highlighted fields.", toCart: false });
+      return;
+    }
     setSubmitting(true);
     setFields({});
     setFormError(null);
     setPopupError(null);
     reset();
     try {
-      const data = await api("/api/checkout", { method: "POST", body: form });
+      const body = {
+        ...form,
+        deliveryRegionId: Number(area.regionId),
+        deliveryTownId: area.townKey === OTHER_TOWN ? null : Number(area.townKey),
+      };
+      const data = await api("/api/checkout", { method: "POST", body });
+      if (user) saveArea(area);
       focusTarget.current = "summary";
       setCheckout(data.checkout);
       announce(`Total charged ${formatGhs(data.checkout.totalGhs)}. Review your order and pay.`);
@@ -132,6 +165,7 @@ export default function CheckoutPage() {
       setFormError({ text: err.message, toCart });
       setCheckout(null);
       if (toCart) refreshCart();
+      if (err.fields?.deliveryRegionId || err.fields?.deliveryTownId) areas.reload();
     } finally {
       setSubmitting(false);
     }
@@ -307,18 +341,28 @@ export default function CheckoutPage() {
                 />
               </fieldset>
 
-              <fieldset>
+              <fieldset className="space-y-5">
                 <legend className="mb-5">
-                  <SectionHeading>2. Delivery address</SectionHeading>
+                  <SectionHeading>2. Delivery</SectionHeading>
                 </legend>
+                <DeliveryAreaFields
+                  areas={areas}
+                  value={area}
+                  onChange={(next) => {
+                    setArea(next);
+                    setFields((f) => ({ ...f, deliveryRegionId: undefined, deliveryTownId: undefined }));
+                  }}
+                  errors={{ region: fields.deliveryRegionId, town: fields.deliveryTownId }}
+                />
                 <TextField
                   label="Address"
+                  hint="House number, street, or a landmark"
                   multiline
                   rows={3}
                   autoComplete="street-address"
                   required
                   maxLength={500}
-                  placeholder="House number, street, area, city"
+                  placeholder="House 12, Adum, near the post office"
                   value={form.address}
                   onChange={update("address")}
                   error={fields.address}
@@ -334,7 +378,11 @@ export default function CheckoutPage() {
               </section>
 
               <div>
-                <Button type="submit" disabled={submitting} className="min-h-14 w-full text-lg sm:w-auto sm:px-10">
+                <Button
+                  type="submit"
+                  disabled={submitting || !areas.data}
+                  className="min-h-14 w-full text-lg sm:w-auto sm:px-10"
+                >
                   {submitting ? "Getting your total…" : "Continue to payment"}
                 </Button>
                 <p className="mt-3 text-sm text-text-muted">
@@ -348,7 +396,7 @@ export default function CheckoutPage() {
                 <h2 id="details-heading" className="text-xl font-semibold sm:text-2xl">
                   Delivery details
                 </h2>
-                <DetailsRecap form={form} onEdit={editDetails} disabled={busy} />
+                <DetailsRecap form={form} checkout={checkout} onEdit={editDetails} disabled={busy} />
               </section>
               <section aria-labelledby="payment-heading-2" className="space-y-5">
                 <h2 id="payment-heading-2" className="text-xl font-semibold sm:text-2xl">
@@ -360,7 +408,12 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        <OrderSummary cart={cart} checkout={checkout} headingRef={summaryHeading}>
+        <OrderSummary
+          cart={cart}
+          checkout={checkout}
+          headingRef={summaryHeading}
+          deliveryEstimate={findFee(areas.data?.regions, area.regionId, area.townKey)}
+        >
           {checkout && (
             <div className="space-y-4">
               <PaymentStatus

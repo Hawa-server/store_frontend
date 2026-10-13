@@ -4,6 +4,7 @@ import { LoaderCircle } from "lucide-react";
 import AuthCard from "../components/AuthCard";
 import Button from "../components/Button";
 import FormAlert from "../components/form/FormAlert";
+import { LinkedMessage, hasLinked } from "../components/LinkedNotice";
 import ResendVerification from "../components/ResendVerification";
 import { api } from "../lib/api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -19,7 +20,7 @@ export default function VerifyEmailPage() {
     if (!token || sent.current === token) return;
     sent.current = token;
     api("/api/auth/verify", { method: "POST", body: { token } })
-      .then((data) => setState({ status: "verified", message: data.message }))
+      .then((data) => setState({ status: "verified", message: data.message, linked: data.linked }))
       .catch((error) => setState({ status: "failed", message: error.message }));
   }, [token]);
 
@@ -38,6 +39,7 @@ export default function VerifyEmailPage() {
     return (
       <AuthCard eyebrow="You're all set" title="Email verified">
         <FormAlert tone="success">{state.message}</FormAlert>
+        {hasLinked(state.linked) && <LinkedMessage linked={state.linked} className="mt-4" />}
         <Button to="/login" state={{ message: state.message, tone: "success" }} className="mt-6 w-full">
           Log in
         </Button>

@@ -2,6 +2,7 @@ import Img from "../Img";
 import { formatGhs, ikUrl, tintClass } from "../../lib/format";
 import { formatUsd } from "../../lib/money";
 import { useCurrency } from "../../context/CurrencyContext";
+import { deliveryText } from "../../lib/delivery";
 
 function Row({ label, children }) {
   return (
@@ -12,7 +13,7 @@ function Row({ label, children }) {
   );
 }
 
-export default function OrderSummary({ cart, checkout, headingRef, children }) {
+export default function OrderSummary({ cart, checkout, headingRef, deliveryEstimate, children }) {
   const { currency } = useCurrency();
 
   return (
@@ -53,11 +54,26 @@ export default function OrderSummary({ cart, checkout, headingRef, children }) {
         <Row label="Delivery">
           {checkout ? (
             formatGhs(checkout.deliveryFeeGhs)
+          ) : deliveryEstimate ? (
+            formatGhs(deliveryEstimate.feeGhs)
           ) : (
-            <span className="text-sm font-normal text-text-muted">Shown when you continue</span>
+            <span className="text-sm font-normal text-text-muted">Choose a delivery area</span>
           )}
         </Row>
+        {checkout && (
+          <p className="text-sm text-text-muted">{deliveryText(checkout.deliveryRegionName, checkout.deliveryTownName)}</p>
+        )}
       </dl>
+
+      {!checkout && deliveryEstimate && (
+        <div className="mt-5 border-t border-border pt-5" aria-live="polite">
+          <dl className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <dt className="text-lg font-semibold">Estimated total</dt>
+            <dd className="text-2xl font-bold">{formatGhs(cart.subtotalGhs + deliveryEstimate.feeGhs)}</dd>
+          </dl>
+          <p className="mt-2 text-sm text-text-muted">The exact total is confirmed when you continue to payment.</p>
+        </div>
+      )}
 
       {checkout && (
         <div className="mt-5 border-t border-border pt-5">

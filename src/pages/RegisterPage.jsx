@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { MailCheck } from "lucide-react";
 import AuthCard from "../components/AuthCard";
 import Button from "../components/Button";
@@ -16,7 +16,8 @@ const linkClass = "font-semibold text-accent underline underline-offset-4 hover:
 export default function RegisterPage() {
   useDocumentTitle("Create an account");
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [params] = useSearchParams();
+  const [form, setForm] = useState(() => ({ name: "", email: params.get("email") ?? "", password: "" }));
   const [fields, setFields] = useState({});
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);

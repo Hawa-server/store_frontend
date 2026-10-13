@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import Img from "../Img";
 import { formatGhs, ikUrl } from "../../lib/format";
+import { deliveryText } from "../../lib/delivery";
 
 export default function OrderItemsCard({ order, title = "Items", totalLabel = "Total paid", reviewLinks = false }) {
   return (
@@ -48,6 +49,7 @@ export default function OrderItemsCard({ order, title = "Items", totalLabel = "T
           <dt className="text-text-body">Delivery</dt>
           <dd className="font-medium">{formatGhs(order.deliveryFeeGhs)}</dd>
         </div>
+        <p className="text-sm text-text-muted">{deliveryText(order.deliveryRegionName, order.deliveryTownName)}</p>
         <div className="flex items-baseline justify-between gap-4 border-t border-border pt-3">
           <dt className="text-lg font-semibold">{totalLabel}</dt>
           <dd className="text-2xl font-bold">{formatGhs(order.totalGhs)}</dd>

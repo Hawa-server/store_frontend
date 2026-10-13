@@ -14,7 +14,7 @@ import { api } from "../../lib/api";
 import { useApi } from "../../hooks/useApi";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useAnnounce } from "../../context/AnnouncerContext";
-import { formatDateTime, formatGhs } from "../../lib/format";
+import { formatDate, formatDateTime, formatGhs } from "../../lib/format";
 import { parseGhsAmount } from "../../lib/orders";
 
 const card = "rounded-card border border-border bg-surface p-5 sm:p-7";
@@ -338,6 +338,11 @@ export default function AdminOrderPage() {
           <header className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
             <div>
               <p className="text-sm text-text-muted">Placed {formatDateTime(order.placedAt)}</p>
+              {order.linkedAt && (
+                <p className="text-sm text-text-muted">
+                  Placed as a guest, linked to this account on {formatDate(order.linkedAt)}
+                </p>
+              )}
               <h1 className="mt-1 font-display text-3xl leading-tight font-semibold whitespace-nowrap sm:text-5xl">{order.orderNumber}</h1>
               <div className="mt-3">
                 <StatusBadge status={order.status} />
