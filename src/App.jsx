@@ -30,6 +30,7 @@ const AdminReviewsPage = lazy(() => import("./pages/admin/AdminReviewsPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
 const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
 const AdminProductFormPage = lazy(() => import("./pages/admin/AdminProductFormPage"));
+const AdminDeliveryPage = lazy(() => import("./pages/admin/AdminDeliveryPage"));
 
 function AdminLoading() {
   return (
@@ -79,6 +80,7 @@ const router = createBrowserRouter([
           { path: "products", element: <AdminProductsPage /> },
           { path: "products/new", element: <AdminProductFormPage key="new" /> },
           { path: "products/:id", element: <AdminProductFormPage key="edit" /> },
+          { path: "delivery", element: <AdminDeliveryPage /> },
           { path: "reviews", element: <AdminReviewsPage /> },
         ],
       },

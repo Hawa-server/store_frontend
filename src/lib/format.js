@@ -58,3 +58,7 @@ const ghanaDate = new Intl.DateTimeFormat("en-GB", {
 export function formatDate(iso) {
   return ghanaDate.format(new Date(iso));
 }
+
+export function pesewasToInput(pesewas) {
+  return `${Math.floor(pesewas / 100)}.${String(pesewas % 100).padStart(2, "0")}`;
+}

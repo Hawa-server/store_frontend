@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { CircleCheck, MapPin, Smartphone } from "lucide-react";
+import { CircleCheck, MapPin, Smartphone, UserPlus } from "lucide-react";
 import Button from "../components/Button";
 import Img from "../components/Img";
 import PageContainer from "../components/PageContainer";
@@ -12,6 +12,7 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useCart } from "../context/CartContext";
 import { firstName, useAuth } from "../context/AuthContext";
 import { formatDateTime, formatGhs, ikUrl, tintClass } from "../lib/format";
+import { deliveryText } from "../lib/delivery";
 
 const statusNotes = {
   Pending: "We're preparing your order.",
@@ -109,6 +110,24 @@ export default function OrderConfirmationPage() {
             </p>
           </header>
 
+          {!user && (
+            <aside
+              aria-label="Create an account"
+              className="mt-8 flex max-w-3xl flex-col gap-4 rounded-card border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+            >
+              <p className="flex items-start gap-3 text-text-body">
+                <UserPlus className="mt-0.5 size-5 shrink-0 text-accent" strokeWidth={1.7} aria-hidden="true" />
+                <span>
+                  Create an account with <strong className="wrap-break-word text-text">{order.email}</strong> to track
+                  this order and your future orders in one place.
+                </span>
+              </p>
+              <Button to={`/register?email=${encodeURIComponent(order.email)}`} className="shrink-0">
+                Create account
+              </Button>
+            </aside>
+          )}
+
           <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-12">
             <section aria-labelledby="items-heading" className={card}>
               <h2 id="items-heading" className="text-2xl font-semibold">
@@ -146,6 +165,7 @@ export default function OrderConfirmationPage() {
               <dl className="mt-6 space-y-3">
                 <Row label="Subtotal">{formatGhs(order.subtotalGhs)}</Row>
                 <Row label="Delivery">{formatGhs(order.deliveryFeeGhs)}</Row>
+                <p className="text-sm text-text-muted">{deliveryText(order.deliveryRegionName, order.deliveryTownName)}</p>
                 <div className="border-t border-border pt-4">
                   <Row label="Total paid" strong>
                     {formatGhs(order.totalGhs)}

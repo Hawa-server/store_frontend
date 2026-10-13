@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import CheckoutHeader from "./CheckoutHeader";
 import Footer from "./Footer";
+import LinkedBanner from "./LinkedNotice";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -25,6 +26,7 @@ export default function Layout() {
       </a>
       {pathname.startsWith("/checkout") ? <CheckoutHeader /> : <Header />}
       <main id="main" ref={mainRef} tabIndex={-1} className="flex-1 focus:outline-none">
+        <LinkedBanner />
         <Outlet />
       </main>
       <Footer />

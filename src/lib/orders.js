@@ -13,13 +13,13 @@ export function shopperRefundText(status) {
 
 export const AMOUNT_FORMAT_ERROR = "Enter an amount in GH₵ with at most 2 decimal places, for example 50 or 50.25.";
 
-export function parseGhsAmount(text, { max, maxError } = {}) {
+export function parseGhsAmount(text, { max, maxError, allowZero = false } = {}) {
   const value = String(text).trim();
   const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value);
   if (!match) return { error: AMOUNT_FORMAT_ERROR };
   const pesewas = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
   if (!Number.isSafeInteger(pesewas)) return { error: AMOUNT_FORMAT_ERROR };
-  if (pesewas <= 0) return { error: "Enter an amount greater than GH₵ 0.00." };
+  if (pesewas <= 0 && !allowZero) return { error: "Enter an amount greater than GH₵ 0.00." };
   if (max !== undefined && pesewas > max) return { error: maxError ?? AMOUNT_FORMAT_ERROR };
   return { pesewas };
 }
