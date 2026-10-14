@@ -9,6 +9,7 @@ import { useApi } from "../hooks/useApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import QuantityStepper from "../components/QuantityStepper";
 import AddToCartButton from "../components/AddToCartButton";
+import WishlistButton from "../components/WishlistButton";
 import FormAlert from "../components/form/FormAlert";
 import { ikSrcSet, ikUrl, tintClass } from "../lib/format";
 import { useMoney } from "../lib/money";
@@ -80,6 +81,12 @@ function BuyBox({ product }) {
           size="lg"
           className="w-full sm:flex-1"
           onAdded={() => setResult({ tone: "success" })}
+          onError={(error) => setResult(error ? { tone: "error", text: error.message } : null)}
+        />
+        <WishlistButton
+          product={product}
+          variant="inline"
+          className="self-start"
           onError={(error) => setResult(error ? { tone: "error", text: error.message } : null)}
         />
       </div>

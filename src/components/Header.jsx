@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, LogOut, Menu, Package, ShoppingBag, User, X } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, Menu, Package, ShoppingBag, User, X } from "lucide-react";
 import PageContainer from "./PageContainer";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./ui/Logo";
@@ -8,6 +8,7 @@ import CurrencySelect from "./CurrencySelect";
 import { useCategories } from "../context/CategoriesContext";
 import { useCart } from "../context/CartContext";
 import { firstName, useAuth } from "../context/AuthContext";
+import { useWishlist } from "../context/WishlistContext";
 
 const iconButton =
   "relative size-11 items-center justify-center rounded-full text-text transition-colors hover:bg-text/8";
@@ -25,7 +26,7 @@ function DesktopNav({ items }) {
 
   return (
     <nav aria-label="Categories" className="hidden flex-1 justify-center xl:flex">
-      <ul className="flex items-center gap-0.5 2xl:gap-3">
+      <ul className="flex items-center gap-0.5">
         {items.map((item) => {
           const highlight = item.to === "/products" && pathname === "/";
           return (
@@ -33,7 +34,7 @@ function DesktopNav({ items }) {
               <NavLink
                 to={item.to}
                 className={({ isActive }) =>
-                  `relative inline-flex min-h-11 items-center px-2.5 text-[15px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-2.5 after:bottom-1.5 after:h-0.5 after:origin-left after:rounded-full after:bg-text after:transition-transform hover:after:scale-x-100 ${
+                  `relative inline-flex min-h-11 items-center px-2 text-[15px] font-medium whitespace-nowrap transition-colors after:absolute after:inset-x-2 after:bottom-1.5 after:h-0.5 after:origin-left after:rounded-full after:bg-text after:transition-transform hover:after:scale-x-100 ${
                     isActive || highlight ? "after:scale-x-100" : "text-text/80 after:scale-x-0 hover:text-text"
                   }`
                 }
@@ -140,6 +141,10 @@ function MobileAccount() {
         <Package className="size-5" strokeWidth={1.6} aria-hidden="true" />
         My orders
       </Link>
+      <Link to="/wishlist" className={accountCard}>
+        <Heart className="size-5" strokeWidth={1.6} aria-hidden="true" />
+        Wishlist
+      </Link>
       {user.isAdmin && (
         <Link to="/admin" className={accountCard}>
           <LayoutDashboard className="size-5" strokeWidth={1.6} aria-hidden="true" />
@@ -151,6 +156,24 @@ function MobileAccount() {
         {loggingOut ? "Logging out…" : "Log out"}
       </button>
     </div>
+  );
+}
+
+function WishlistLink() {
+  const { user } = useAuth();
+  const { count } = useWishlist();
+  if (!user) return null;
+  const label = count === 1 ? "Wishlist, 1 item" : `Wishlist, ${count} items`;
+
+  return (
+    <Link to="/wishlist" className={`${iconButton} inline-flex`} aria-label={label}>
+      <Heart className="size-5.5" strokeWidth={1.6} aria-hidden="true" />
+      {count > 0 && (
+        <span className="absolute top-0.5 right-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-xs leading-none font-bold text-on-accent">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
   );
 }
 
@@ -169,10 +192,10 @@ function DesktopAccount() {
     <>
       <Link
         to="/account"
-        className="hidden min-h-11 items-center gap-2 rounded-full pr-3 pl-2.5 text-[15px] font-medium transition-colors hover:bg-text/8 lg:inline-flex"
+        className="hidden size-11 items-center justify-center rounded-full text-[15px] font-medium transition-colors hover:bg-text/8 lg:inline-flex"
       >
         <User className="size-5.5" strokeWidth={1.6} aria-hidden="true" />
-        <span className="max-w-28 truncate">{firstName(user)}</span>
+        <span className="sr-only">{firstName(user)}</span>
         <span className="sr-only">, your account</span>
       </Link>
       <button
@@ -232,6 +255,7 @@ export default function Header() {
           <CurrencySelect className="mr-1 hidden xl:flex" />
           <DesktopAccount />
           <ThemeToggle />
+          <WishlistLink />
           <Link to="/cart" className={`${iconButton} -mr-2.5 inline-flex`} aria-label={cartLabel}>
             <ShoppingBag className="size-5.5" strokeWidth={1.6} aria-hidden="true" />
             {itemCount > 0 && (

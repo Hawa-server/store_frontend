@@ -19,6 +19,7 @@ import CheckoutCompletePage from "./pages/CheckoutCompletePage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
+import WishlistPage from "./pages/WishlistPage";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CategoriesProvider } from "./context/CategoriesContext";
 import { CartProvider } from "./context/CartContext";
@@ -33,6 +34,8 @@ const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage")
 const AdminProductsPage = lazy(() => import("./pages/admin/AdminProductsPage"));
 const AdminProductFormPage = lazy(() => import("./pages/admin/AdminProductFormPage"));
 const AdminDeliveryPage = lazy(() => import("./pages/admin/AdminDeliveryPage"));
+const AdminDiscountsPage = lazy(() => import("./pages/admin/AdminDiscountsPage"));
+const AdminDiscountFormPage = lazy(() => import("./pages/admin/AdminDiscountFormPage"));
 
 function AdminLoading() {
   return (
@@ -67,6 +70,7 @@ const router = createBrowserRouter([
           { path: "/account", element: loggedIn(<AccountPage />) },
           { path: "/orders", element: loggedIn(<OrdersPage />) },
           { path: "/orders/:id", element: loggedIn(<OrderDetailPage />) },
+          { path: "/wishlist", element: loggedIn(<WishlistPage />) },
           { path: "*", element: <NotFoundPage /> },
         ],
       },
@@ -85,6 +89,9 @@ const router = createBrowserRouter([
           { path: "products/new", element: <AdminProductFormPage key="new" /> },
           { path: "products/:id", element: <AdminProductFormPage key="edit" /> },
           { path: "delivery", element: <AdminDeliveryPage /> },
+          { path: "discounts", element: <AdminDiscountsPage /> },
+          { path: "discounts/new", element: <AdminDiscountFormPage key="new" /> },
+          { path: "discounts/:id", element: <AdminDiscountFormPage key="edit" /> },
           { path: "reviews", element: <AdminReviewsPage /> },
         ],
       },

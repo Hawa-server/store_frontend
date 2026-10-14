@@ -9,7 +9,7 @@ export default function CurrencySelect({ layout = "inline", className = "" }) {
 
   return (
     <div className={`${stacked ? "flex flex-col gap-2" : "flex items-center gap-2"} ${className}`}>
-      <label htmlFor={id} className={stacked ? "text-sm font-semibold" : "sr-only 2xl:not-sr-only 2xl:text-sm 2xl:text-text-muted"}>
+      <label htmlFor={id} className={stacked ? "text-sm font-semibold" : "sr-only"}>
         Currency
       </label>
       <div className="relative">

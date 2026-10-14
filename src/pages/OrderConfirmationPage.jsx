@@ -164,6 +164,11 @@ export default function OrderConfirmationPage() {
               </h2>
               <dl className="mt-6 space-y-3">
                 <Row label="Subtotal">{formatGhs(order.subtotalGhs)}</Row>
+                {order.discountGhs > 0 && (
+                  <Row label={`Discount (${order.discountCode})`}>
+                    <span className="text-status-success-text">− {formatGhs(order.discountGhs)}</span>
+                  </Row>
+                )}
                 <Row label="Delivery">{formatGhs(order.deliveryFeeGhs)}</Row>
                 <p className="text-sm text-text-muted">{deliveryText(order.deliveryRegionName, order.deliveryTownName)}</p>
                 <div className="border-t border-border pt-4">

@@ -45,6 +45,12 @@ export default function OrderItemsCard({ order, title = "Items", totalLabel = "T
           <dt className="text-text-body">Subtotal</dt>
           <dd className="font-medium">{formatGhs(order.subtotalGhs)}</dd>
         </div>
+        {order.discountGhs > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-text-body">Discount ({order.discountCode})</dt>
+            <dd className="font-medium text-status-success-text">− {formatGhs(order.discountGhs)}</dd>
+          </div>
+        )}
         <div className="flex justify-between gap-4">
           <dt className="text-text-body">Delivery</dt>
           <dd className="font-medium">{formatGhs(order.deliveryFeeGhs)}</dd>

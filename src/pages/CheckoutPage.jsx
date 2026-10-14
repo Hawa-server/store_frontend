@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CircleCheck, ShoppingBag, Smartphone, TriangleAlert } from "lucide-react";
 import Button from "../components/Button";
@@ -8,6 +8,7 @@ import TextField from "../components/form/TextField";
 import FormAlert from "../components/form/FormAlert";
 import OrderSummary from "../components/checkout/OrderSummary";
 import DeliveryAreaFields from "../components/checkout/DeliveryAreaFields";
+import DiscountCodeBox from "../components/checkout/DiscountCodeBox";
 import { useApi } from "../hooks/useApi";
 import { OTHER_TOWN, deliveryText, findFee, readSavedArea, saveArea } from "../lib/delivery";
 import PaymentStatus from "../components/checkout/PaymentStatus";
@@ -98,6 +99,9 @@ export default function CheckoutPage() {
   const [area, setArea] = useState({ regionId: "", townKey: "" });
   const areas = useApi("/api/delivery-areas");
   const areaRestored = useRef(false);
+  const [discount, setDiscount] = useState(null);
+  const [discountError, setDiscountError] = useState(null);
+  const [checkingCode, setCheckingCode] = useState(false);
 
   const prefilled = useRef(false);
   const summaryHeading = useRef(null);
@@ -129,6 +133,42 @@ export default function CheckoutPage() {
     target?.focus();
   }, [checkout]);
 
+  const checkCode = useCallback(
+    async (code, { recheck = false } = {}) => {
+      if (!code) {
+        setDiscountError("Enter a discount code.");
+        return;
+      }
+      setCheckingCode(true);
+      setDiscountError(null);
+      try {
+        const data = await api("/api/discounts/check", { method: "POST", body: { code } });
+        setDiscount(data.discount);
+        announce(`Discount code ${data.discount.code} applied. You save ${formatGhs(data.discount.discountGhs)}.`);
+      } catch (err) {
+        setDiscount(null);
+        const message = err.fields?.code ?? err.message;
+        setDiscountError(recheck ? `Your cart changed, so ${code} was checked again: ${message}` : message);
+        announce(message);
+      } finally {
+        setCheckingCode(false);
+      }
+    },
+    [announce],
+  );
+
+  const cartSubtotal = cart?.subtotalGhs;
+  useEffect(() => {
+    if (!discount || checkingCode || checkout || cartSubtotal === undefined) return;
+    if (discount.subtotalGhs !== cartSubtotal) checkCode(discount.code, { recheck: true });
+  }, [discount, cartSubtotal, checkingCode, checkout, checkCode]);
+
+  function removeCode() {
+    setDiscount(null);
+    setDiscountError(null);
+    announce("Discount code removed");
+  }
+
   const update = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.value }));
   const busy = popup !== "closed" || payment.status === "verifying" || payment.status === "paid";
 
@@ -154,6 +194,7 @@ export default function CheckoutPage() {
         deliveryRegionId: Number(area.regionId),
         deliveryTownId: area.townKey === OTHER_TOWN ? null : Number(area.townKey),
       };
+      if (discount) body.discountCode = discount.code;
       const data = await api("/api/checkout", { method: "POST", body });
       if (user) saveArea(area);
       focusTarget.current = "summary";
@@ -163,6 +204,10 @@ export default function CheckoutPage() {
       const toCart = err.code === "OUT_OF_STOCK" || /cart is empty/i.test(err.message);
       setFields(err.fields ?? {});
       setFormError({ text: err.message, toCart });
+      if (err.fields?.discountCode) {
+        setDiscount(null);
+        setDiscountError(err.fields.discountCode);
+      }
       setCheckout(null);
       if (toCart) refreshCart();
       if (err.fields?.deliveryRegionId || err.fields?.deliveryTownId) areas.reload();
@@ -413,7 +458,17 @@ export default function CheckoutPage() {
           checkout={checkout}
           headingRef={summaryHeading}
           deliveryEstimate={findFee(areas.data?.regions, area.regionId, area.townKey)}
+          discount={discount}
         >
+          {!checkout && (
+            <DiscountCodeBox
+              applied={discount}
+              error={discountError}
+              checking={checkingCode}
+              onApply={(code) => checkCode(code)}
+              onRemove={removeCode}
+            />
+          )}
           {checkout && (
             <div className="space-y-4">
               <PaymentStatus
