@@ -39,9 +39,9 @@ export default function OrderDetailPage() {
   if (error && (error.status === 404 || error.status === 400)) {
     return (
       <NotFoundPage
-        title="We couldn't find that order"
+        title="Order not found"
         message="It may belong to a different account, or the link may be wrong."
-        actions={<Button to="/orders">Back to my orders</Button>}
+        actions={<Button to="/orders">My Orders</Button>}
       />
     );
   }

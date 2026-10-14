@@ -268,6 +268,8 @@ Logins last one day. When any request returns `401` (`UNAUTHENTICATED`) on a pag
 - Send the user to the login page with the message: `Your session has ended. Please log in again.`
 - After login, return them to the page they were on.
 
+**One exception (FE14, BE27):** deleting the account (`DELETE /api/account`) answers a wrong password with `401` `WRONG_PASSWORD`, and the user is still logged in. That request alone skips the automatic login redirect (`authRedirect: false`): `WRONG_PASSWORD` is shown under the password field, and any other `401` from it is passed to the normal session-ended handling.
+
 When a request returns `403` (`FORBIDDEN`), for example a non-admin opening an admin page, show a clear "You don't have access to this page" message. Never show admin data based on the frontend's guess.
 
 Do not expose:

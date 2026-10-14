@@ -18,6 +18,10 @@ export function setUnauthenticatedHandler(handler) {
   unauthenticatedHandler = handler;
 }
 
+export function handleUnauthenticated(error) {
+  unauthenticatedHandler?.(error);
+}
+
 export async function api(path, { method = "GET", body, signal, authRedirect = true } = {}) {
   const headers = {
     Accept: "application/json",

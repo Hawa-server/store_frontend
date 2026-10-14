@@ -8,6 +8,8 @@ export default function ConfirmDialog({
   confirmLabel,
   cancelLabel = "Keep it",
   busy = false,
+  confirmDisabled = false,
+  confirmVariant = "primary",
   onConfirm,
   onCancel,
   children,
@@ -45,7 +47,7 @@ export default function ConfirmDialog({
         <Button variant="secondary" onClick={onCancel} disabled={busy}>
           {cancelLabel}
         </Button>
-        <Button onClick={onConfirm} disabled={busy}>
+        <Button variant={confirmVariant} onClick={onConfirm} disabled={busy || confirmDisabled}>
           {busy ? "Working…" : confirmLabel}
         </Button>
       </div>

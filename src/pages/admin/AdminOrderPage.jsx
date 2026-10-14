@@ -325,8 +325,13 @@ export default function AdminOrderPage() {
         <div className="mt-6">
           <ErrorMessage
             error={error.status === 404 || error.status === 400 ? { message: "Order not found." } : error}
-            onRetry={error.status === 404 ? undefined : reload}
+            onRetry={error.status === 404 || error.status === 400 ? undefined : reload}
           />
+          {(error.status === 404 || error.status === 400) && (
+            <Button to="/admin/orders" variant="secondary" className="mt-4">
+              Back to all orders
+            </Button>
+          )}
         </div>
       ) : loading && !order ? (
         <div className="mt-6 space-y-6" aria-hidden="true">
@@ -394,6 +399,11 @@ export default function AdminOrderPage() {
                     {order.customer.isGuest && (
                       <span className="ml-2 rounded-full bg-status-cancelled-bg px-2 py-0.5 text-xs font-semibold text-status-cancelled-text">
                         Guest
+                      </span>
+                    )}
+                    {order.customer.accountDeleted && (
+                      <span className="ml-2 rounded-full bg-status-cancelled-bg px-2 py-0.5 text-xs font-semibold text-status-cancelled-text">
+                        Deleted user
                       </span>
                     )}
                   </Detail>

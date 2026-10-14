@@ -236,6 +236,15 @@ export default function LoginPage() {
           onChange={update("password")}
           error={fields.password}
         />
+        <div className="-mt-2 flex justify-end">
+          <Link
+            to="/forgot-password"
+            state={{ email: form.email.trim() }}
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-text underline underline-offset-4 hover:text-accent"
+          >
+            Forgot your password?
+          </Link>
+        </div>
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Logging in…" : "Log in"}
         </Button>

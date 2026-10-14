@@ -32,3 +32,12 @@ export function saveArea(area) {
   }
   return true;
 }
+
+export function clearSavedArea() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    return false;
+  }
+  return true;
+}

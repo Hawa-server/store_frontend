@@ -177,6 +177,11 @@ export default function AdminOrdersPage() {
                               Guest
                             </span>
                           )}
+                          {order.customer.accountDeleted && (
+                            <span className="ml-2 rounded-full bg-status-cancelled-bg px-2 py-0.5 text-xs font-semibold text-status-cancelled-text">
+                              Deleted user
+                            </span>
+                          )}
                         </p>
                         <p className="text-sm text-text-muted">{order.customer.email}</p>
                       </td>

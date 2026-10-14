@@ -108,11 +108,14 @@ Every error response has this shape:
 | Code | Usual HTTP status | Meaning |
 |---|---|---|
 | `INVALID_REQUEST` | 400, 413, 415 | Validation failed, bad JSON, body too large, or not JSON |
-| `UNAUTHENTICATED` | 401 | Not logged in, or the login has expired |
+| `UNAUTHENTICATED` | 401 | Not logged in, or the login has expired. `"Please log in again."` means the account's sessions were ended (password reset or account deleted, BE27): send the user to the login page |
+| `WRONG_PASSWORD` | 401 | *(BE27)* The current password typed to delete the account is wrong. The user is still logged in |
 | `FORBIDDEN` | 403 | Logged in but not allowed, or the `X-Requested-With` header is missing |
 | `EMAIL_NOT_VERIFIED` | 403 | Correct password, but the email address hasn't been verified yet |
 | `NOT_FOUND` | 404 | The resource or route doesn't exist (or isn't yours) |
 | `CONFLICT` | 409 | Duplicate, or the resource is in the wrong state |
+| `ORDERS_IN_PROGRESS` | 409 | *(BE27)* The account can't be deleted yet: an order is Pending or Shipped, or a payment is in progress |
+| `RESET_LINK_INVALID` | 400 | *(BE27)* The password reset link is unknown, already used, replaced by a newer one, or older than 30 minutes |
 | `OUT_OF_STOCK` | 409 | Not enough stock |
 | `RATE_LIMITED` | 429 | Too many attempts; try again later |
 | `PAYMENT_FAILED` | 402, 502 | The payment didn't succeed, or couldn't be started with Paystack (502) |
@@ -120,6 +123,14 @@ Every error response has this shape:
 | `SERVER_ERROR` | 500, 503 | Something went wrong on the server |
 
 The exact status used by each endpoint is listed with that endpoint.
+
+### Product ids (UUIDs)
+
+Products use the same kind of id as orders (below): every product's **`id`**, and every **`productId`** (cart lines, order items, reviews), is a **UUID** string such as `6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40`. It's also the `:id` in `GET /api/products/:id`, `GET` and `POST /api/products/:id/reviews`, and `GET` and `PATCH /api/admin/products/:id`, and the `productId` sent to `POST /api/cart/items`.
+
+- The database's counting number is never sent, so ids don't reveal how many products exist or the order they were added in.
+- A value that isn't a product UUID (including an old number like `12`) gets the same **404 "Product not found."** as a product that doesn't exist.
+- Still numbers: category ids (`categoryId`), cart line ids (`/api/cart/items/:id`), review ids, image ids, delivery area ids, refund ids and user ids.
 
 ### Order ids (UUIDs)
 
@@ -135,7 +146,7 @@ POST  /api/admin/orders/:id/refunds   POST /api/admin/orders/:id/refunds/:refund
 - The database's counting number is **never** sent, so order addresses can't be guessed and don't reveal how many orders the store has.
 - Anything that isn't a valid order UUID in an order address, **including an old number such as `9`**, gets the same **404 `NOT_FOUND` "Order not found."** as an order that doesn't exist (never a 400). Show "Order not found" with a link to My Orders. Old links like `/orders/9` from earlier test emails therefore show "Order not found".
 - `orderNumber` (e.g. `ORD-20261012-K8W82Y`) is still what people read and quote; it's a date plus random letters, so it reveals nothing either.
-- Other ids (products, cart items, reviews, refunds, delivery areas) are unchanged numbers.
+- Products use UUIDs too (above). Cart line, review, refund, category and delivery area ids are unchanged numbers.
 
 ### Pagination format
 
@@ -521,6 +532,78 @@ After logout, `GET /api/cart` returns an empty cart, so reset the cart badge to 
 { "message": "You have been logged out." }
 ```
 
+#### `POST /api/auth/forgot-password`
+
+*(BE27)* Step 1 of "Forgot password": emails a link to set a new password.
+
+- **Login required:** no
+- **Admin required:** no
+- **Headers:** `X-Requested-With: XMLHttpRequest`, `Content-Type: application/json`
+- **Rate limit:** 5 per hour per IP address
+
+**Request body**
+
+```json
+{ "email": "ama.mensah@example.com" }
+```
+
+**200 OK**, always the same, **whether or not an account exists** (so the form can't be used to find out who has an account):
+
+```json
+{ "message": "If an account exists for this email, we've sent a link to reset your password." }
+```
+
+- If an account exists, it gets an email with the link **`{CLIENT_URL}/reset-password?token=<64 hex characters>`**. The link works **once** and expires after **30 minutes**. Asking again sends a new link and **cancels the older one**.
+- At most **3 links per email per hour**. Extra requests still get the same 200, but no email is sent.
+- Show the message as it is, e.g. "Check your email (and Spam)".
+- In development the server also prints the link in its console.
+
+**Errors**
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | `fields.email`: missing or not a valid email |
+| 429 | `RATE_LIMITED` | More than 5 requests from this IP in an hour |
+
+#### `POST /api/auth/reset-password`
+
+*(BE27)* Step 2: the frontend page `/reset-password` reads `token` from the address and sends it with the new password.
+
+- **Login required:** no
+- **Admin required:** no
+- **Headers:** `X-Requested-With: XMLHttpRequest`, `Content-Type: application/json`
+- **Rate limit:** 10 per 15 minutes per IP address
+
+**Request body**
+
+| Field | Type | Rules |
+|---|---|---|
+| `token` | string | Required, from the link (64 hex characters) |
+| `password` | string | Required, **the same rules as registration**: 8–72 characters |
+
+```json
+{ "token": "3f9a…(64 hex characters)", "password": "MyNewPassword123" }
+```
+
+**200 OK**
+
+```json
+{ "message": "Your password has been changed. Please log in with your new password." }
+```
+
+- **The user is not logged in.** Send them to the login page (the login code step still applies when it's on).
+- **Every existing login ends**, on every phone and browser: their next request gets 401 `"Please log in again."`.
+- An account whose email wasn't verified yet becomes verified (the link proves they own the inbox).
+- A "Your password was changed" email is sent.
+
+**Errors**
+
+| Status | Code | Message / when |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | `fields.password` (e.g. "Password must be at least 8 characters."), or `fields.token` for a badly formed token |
+| 400 | `RESET_LINK_INVALID` | `"This link has expired or has already been used. Please ask for a new one."` Used, replaced by a newer link, or older than 30 minutes. Show a link to "Forgot password" |
+| 429 | `RATE_LIMITED` | More than 10 attempts from this IP in 15 minutes |
+
 #### `GET /api/auth/me`
 
 Returns the logged-in user. Use it when the app loads to find out whether someone is logged in.
@@ -550,6 +633,58 @@ Returns the logged-in user. Use it when the app loads to find out whether someon
 | 401 | `UNAUTHENTICATED` | `"Please log in to continue."` No cookie, or the token is invalid or expired, or the account no longer exists |
 
 Every endpoint marked **Login required** returns this same `401` when the user isn't logged in.
+
+### Account
+
+#### `DELETE /api/account`
+
+*(BE27)* The logged-in shopper deletes **their own** account.
+
+- **Login required:** yes
+- **Admin required:** no (admins are refused, below)
+- **Headers:** `X-Requested-With: XMLHttpRequest`, `Content-Type: application/json`
+- **Rate limit:** 5 per 15 minutes **per user**
+
+**Request body**
+
+| Field | Type | Rules |
+|---|---|---|
+| `password` | string | Required, the account's **current** password |
+| `confirm` | string | Required, exactly `"DELETE"` (capitals), typed by the user |
+
+```json
+{ "password": "DemoShopper123", "confirm": "DELETE" }
+```
+
+**200 OK** (the response also clears the login and cart cookies)
+
+```json
+{ "message": "Your account has been deleted." }
+```
+
+**What happens:**
+
+| Data | What happens |
+|---|---|
+| The account | Deleted: it can't log in, and every login on every device ends. The email address is freed: registering again with it creates a **new, empty** account |
+| Orders | **Kept** for the store's records (sales, refunds), but no longer in any account. Registering again does **not** bring them back |
+| Reviews | Deleted (product ratings update straight away) |
+| Cart | Deleted |
+
+A "Your Adorn account has been deleted" email is sent to the address the account had.
+
+**Errors**
+
+| Status | Code | Message / when |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | `fields.confirm`: `"Type DELETE to confirm."`; `fields.password` when missing |
+| 401 | `UNAUTHENTICATED` | Not logged in |
+| 401 | `WRONG_PASSWORD` | `"Your password is incorrect."` The user stays logged in; don't log them out |
+| 403 | `FORBIDDEN` | `"Admin accounts can't be deleted here."`, or the `X-Requested-With` header is missing |
+| 409 | `ORDERS_IN_PROGRESS` | `"You have orders that haven't been delivered yet. You can delete your account once they're delivered or cancelled."` Some order is **Pending** or **Shipped**, or a payment was started in the last 30 minutes and hasn't finished |
+| 429 | `RATE_LIMITED` | More than 5 attempts in 15 minutes |
+
+**For the frontend:** put it on the account page under "Delete account", explain what's kept and what's removed (the table above), and ask for the password and for the user to type DELETE. After the 200, clear any saved user state and go to the home page.
 
 ### Settings
 
@@ -644,7 +779,7 @@ Lists active products, sorted A–Z by name. Not paginated.
 {
   "products": [
     {
-      "id": 1,
+      "id": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40",
       "name": "Black Canvas Tote Bag",
       "priceGhs": 12000,
       "priceUsd": 774,
@@ -655,7 +790,7 @@ Lists active products, sorted A–Z by name. Not paginated.
       "rating": { "average": 4.5, "count": 2 }
     },
     {
-      "id": 7,
+      "id": "0d8e2a41-5b6c-4e7f-8a9b-1c2d3e4f5a60",
       "name": "Black Leather Mini Duffle Bag",
       "priceGhs": 38000,
       "priceUsd": 2452,
@@ -692,7 +827,7 @@ One product's full details.
 ```json
 {
   "product": {
-    "id": 1,
+    "id": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40",
     "name": "Black Canvas Tote Bag",
     "priceGhs": 12000,
     "priceUsd": 774,
@@ -719,7 +854,7 @@ Each product currently has one image, so `images` has one entry. The list suppor
   "viewer": {
     "canReview": false,
     "myReview": {
-      "id": 7, "productId": 1, "rating": 5, "text": "Beautiful bag.",
+      "id": 7, "productId": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40", "rating": 5, "text": "Beautiful bag.",
       "createdAt": "2026-09-29T17:32:28.000Z", "editedAt": null, "isHidden": false
     }
   }
@@ -733,8 +868,7 @@ Each product currently has one image, so `images` has one entry. The list suppor
 
 | Status | Code | When |
 |---|---|---|
-| 400 | `INVALID_REQUEST` | `id` isn't a positive whole number (for example `abc` or `1.5`); see `fields.id` |
-| 404 | `NOT_FOUND` | `"Product not found."` The product doesn't exist or has been removed from the shop |
+| 404 | `NOT_FOUND` | `"Product not found."` The product doesn't exist, has been removed from the shop, or `:id` isn't a product UUID (e.g. an old number like `12`, or `abc`) |
 
 ### Reviews
 
@@ -802,8 +936,8 @@ The public reviews for one product, with a summary for the star breakdown.
 
 | Status | Code | When |
 |---|---|---|
-| 400 | `INVALID_REQUEST` | A bad `id`, `sort` (`"Sort must be recent, highest or lowest."`) or `page` |
-| 404 | `NOT_FOUND` | `"Product not found."` |
+| 400 | `INVALID_REQUEST` | A bad `sort` (`"Sort must be recent, highest or lowest."`) or `page` |
+| 404 | `NOT_FOUND` | `"Product not found."` Unknown, removed from the shop, or `:id` isn't a product UUID (e.g. an old number like `12`) |
 
 #### `POST /api/products/:id/reviews`
 
@@ -826,7 +960,7 @@ Writes a review for a product you've received.
 **201 Created**: your review, in the same shape as `viewer.myReview`:
 
 ```json
-{ "review": { "id": 22, "productId": 33, "rating": 4, "text": "Gentle on my skin.", "createdAt": "2026-10-01T12:02:16.264Z", "editedAt": null, "isHidden": false } }
+{ "review": { "id": 22, "productId": "7e6d5c4b-3a29-4818-b7f6-e5d4c3b2a190", "rating": 4, "text": "Gentle on my skin.", "createdAt": "2026-10-01T12:02:16.264Z", "editedAt": null, "isHidden": false } }
 ```
 
 **Errors**
@@ -836,7 +970,7 @@ Writes a review for a product you've received.
 | 400 | `INVALID_REQUEST` | Validation failed: `fields.rating` (`"Rating must be from 1 to 5."`…) or `fields.text` (`"Your review must be 1,000 characters or fewer."`) |
 | 401 | `UNAUTHENTICATED` | Not logged in. Show "Log in to write a review" |
 | 403 | `FORBIDDEN` | `"You can review a product after it has been delivered to you."` |
-| 404 | `NOT_FOUND` | `"Product not found."` |
+| 404 | `NOT_FOUND` | `"Product not found."` Unknown, removed from the shop, or `:id` isn't a product UUID (e.g. an old number like `12`) |
 | 409 | `CONFLICT` | `"You've already reviewed this product. You can edit your review instead."` |
 | 429 | `RATE_LIMITED` | Too many review actions from this IP |
 
@@ -903,7 +1037,7 @@ The cart works for **guests and logged-in users**. The frontend never sends a ca
     "items": [
       {
         "id": 12,
-        "productId": 1,
+        "productId": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40",
         "name": "Black Canvas Tote Bag",
         "unitPriceGhs": 12000,
         "unitPriceUsd": 774,
@@ -964,13 +1098,13 @@ Adds a product to the cart. If the product is already in the cart, its quantity 
 
 | Field | Type | Rules |
 |---|---|---|
-| `productId` | number | Required, a positive whole number |
+| `productId` | string | Required. The product's **UUID** (its `id` from `GET /api/products`). A value that isn't a product UUID (e.g. an old number like `12`) gets **404 "Product not found."** |
 | `quantity` | number | Required, a whole number from 1 to 99 |
 
 Both must be JSON numbers (`1`, not `"1"`). Any other fields, such as a price or a cart ID, are ignored.
 
 ```json
-{ "productId": 1, "quantity": 1 }
+{ "productId": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40", "quantity": 1 }
 ```
 
 **200 OK:** the updated cart object.
@@ -979,9 +1113,9 @@ Both must be JSON numbers (`1`, not `"1"`). Any other fields, such as a price or
 
 | Status | Code | Message / when |
 |---|---|---|
-| 400 | `INVALID_REQUEST` | Validation failed (see `fields`): quantity is 0, negative, a decimal, text or over 99, or productId is invalid |
+| 400 | `INVALID_REQUEST` | Validation failed (see `fields`): quantity is 0, negative, a decimal, text or over 99, or `productId` is missing |
 | 400 | `INVALID_REQUEST` | `"You can add up to 99 of this product."` The line would go over 99 in total (quantity already in the cart plus this one) |
-| 404 | `NOT_FOUND` | `"Product not found."` Unknown, or removed from the shop |
+| 404 | `NOT_FOUND` | `"Product not found."` Unknown, removed from the shop, or `productId` isn't a product UUID (e.g. an old number like `12`) |
 | 409 | `OUT_OF_STOCK` | `"This product is out of stock."` Stock is 0 |
 | 409 | `OUT_OF_STOCK` | `"Only X available."` Quantity already in the cart plus this one is more than the stock |
 
@@ -1290,7 +1424,7 @@ The orders that **belong to this account**: those placed while logged in, plus *
       "totalGhs": 8000,
       "itemCount": 1,
       "items": [
-        { "productId": 31, "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
+        { "productId": "9c8b7a6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d", "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
       ]
     }
   ],
@@ -1333,7 +1467,7 @@ One of **your own** orders, with its status history and refunds.
     "placedAt": "2026-09-30T14:05:12.000Z",
     "canCancel": true,
     "items": [
-      { "productId": 31, "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
+      { "productId": "9c8b7a6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d", "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
     ],
     "subtotalGhs": 6000,
     "deliveryFeeGhs": 2000,
@@ -1445,7 +1579,7 @@ Loads one order for the **order confirmation page**. The frontend page address i
     "placedAt": "2026-09-30T18:44:21.000Z",
     "items": [
       {
-        "productId": 22,
+        "productId": "2b4d6f8a-0c1e-4a3b-9d5f-7e9a1c3e5b7d",
         "name": "Black Volumising Mascara",
         "unitPriceGhs": 7000,
         "quantity": 2,
@@ -1522,8 +1656,8 @@ The admin home page: sales, refunds, recent orders, things needing attention, an
   "stock": {
     "lowStockThreshold": 5,
     "lowStockCount": 2,
-    "lowStock": [ { "id": 15, "name": "Makeup Setting Spray", "stock": 2 } ],
-    "outOfStock": [ { "id": 30, "name": "Pearl Stud Earrings", "stock": 0 } ]
+    "lowStock": [ { "id": "a3c5e7f9-1b2d-4f6a-8c0e-2d4f6a8c0e12", "name": "Makeup Setting Spray", "stock": 2 } ],
+    "outOfStock": [ { "id": "f1e2d3c4-b5a6-4978-8a6b-5c4d3e2f1a09", "name": "Pearl Stud Earrings", "stock": 0 } ]
   }
 }
 ```
@@ -1610,7 +1744,7 @@ All products, **including inactive ones**, for the admin's product screen. **A�
 {
   "items": [
     {
-      "id": 1,
+      "id": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40",
       "name": "Black Canvas Tote Bag",
       "category": { "id": 1, "name": "Bags", "slug": "bags" },
       "priceGhs": 12000,
@@ -1648,7 +1782,7 @@ One product with everything the edit form needs. **Inactive products are returne
 ```json
 {
   "product": {
-    "id": 1,
+    "id": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40",
     "name": "Black Canvas Tote Bag",
     "category": { "id": 1, "name": "Bags", "slug": "bags" },
     "priceGhs": 12000,
@@ -1667,7 +1801,7 @@ One product with everything the edit form needs. **Inactive products are returne
 
 **Keep `stock`:** send it back as `expectedStock` when you change the stock (see `PATCH` below).
 
-**Errors:** 400 (a bad `id`), 401, 403, **404** `NOT_FOUND` `"Product not found."`
+**Errors:** 401, 403, **404** `NOT_FOUND` `"Product not found."` (also when `:id` isn't a product UUID)
 
 #### `POST /api/admin/products`
 
@@ -1749,7 +1883,7 @@ Edits a product. Send **only the fields that change**, at least one of: `name`, 
 | 400 | `INVALID_REQUEST` | Any validation error from `POST`; `fields._` "Send at least one field to change."; `fields.expectedStock` when `stock` is sent without it |
 | 401 | `UNAUTHENTICATED` | Not logged in |
 | 403 | `FORBIDDEN` | Not an admin, or the `X-Requested-With` header is missing |
-| 404 | `NOT_FOUND` | `"Product not found."` |
+| 404 | `NOT_FOUND` | `"Product not found."` Unknown, or `:id` isn't a product UUID |
 | 409 | `CONFLICT` | `"A product with this name already exists."` |
 | 409 | `CONFLICT` | **The stock changed since you opened the product.** Nothing was saved, including any other fields in the same request. The error includes the current stock: |
 
@@ -1923,7 +2057,7 @@ Both dates are **included**: `from=2026-09-01&to=2026-09-30` means all of Septem
       "id": "3f2a9c1e-7b4d-4e8a-9f01-6c2d5e8b7a43",
       "orderNumber": "ORD-20260930-3R6FTE",
       "placedAt": "2026-09-30T14:05:12.000Z",
-      "customer": { "name": "Ama Mensah", "email": "ama@example.com", "userId": 2, "isGuest": false },
+      "customer": { "name": "Ama Mensah", "email": "ama@example.com", "userId": 2, "isGuest": false, "accountDeleted": false },
       "totalGhs": 8000,
       "status": "Pending",
       "refundStatus": "none",
@@ -1937,7 +2071,7 @@ Both dates are **included**: `from=2026-09-01&to=2026-09-30` means all of Septem
 }
 ```
 
-- `customer` holds the name and email given **at checkout**. `isGuest` is `true` (with `userId: null`) for orders placed without logging in that **aren't linked** to an account. A guest order linked later (BE25: same email, verified) has the account's `userId` and `isGuest: false`; its details show `linkedAt`.
+- `customer` holds the name and email given **at checkout**. `isGuest` is `true` (with `userId: null`) for orders placed without logging in that **aren't linked** to an account. A guest order linked later (BE25: same email, verified) has the account's `userId` and `isGuest: false`; its details show `linkedAt`. `accountDeleted` *(BE27)* is `true` when the shopper has since **deleted their account**: show the account as **"Deleted user"**. The order's own `name`, `email`, `phone` and delivery address are kept for the store's records.
 - `refundStatus` is **calculated** from the order's refunds each time:
   - `none`: nothing refunded;
   - `partial`: some refunded;
@@ -1969,13 +2103,13 @@ Everything staff need to handle one order.
     "orderNumber": "ORD-20260930-3R6FTE",
     "placedAt": "2026-09-30T14:05:12.000Z",
     "status": "Pending",
-    "customer": { "name": "Ama Mensah", "email": "ama@example.com", "phone": "0241234567", "userId": 2, "isGuest": false },
+    "customer": { "name": "Ama Mensah", "email": "ama@example.com", "phone": "0241234567", "userId": 2, "isGuest": false, "accountDeleted": false },
     "linkedAt": null,
     "deliveryAddress": "12 Oxford Street, Osu, Accra",
     "deliveryRegionName": "Greater Accra",
     "deliveryTownName": "Accra",
     "items": [
-      { "productId": 31, "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
+      { "productId": "9c8b7a6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d", "name": "Silver Pocket Mirror", "unitPriceGhs": 6000, "quantity": 1, "lineTotalGhs": 6000, "image": { "url": "https://ik.imagekit.io/ADORN/ADORN/Products/Accessories/pocket-mirror-1.jpg", "altText": "Silver compact pocket mirror" } }
     ],
     "subtotalGhs": 6000,
     "deliveryFeeGhs": 2000,
@@ -2185,7 +2319,7 @@ All reviews, for moderation: **newest first, 20 per page**.
   "items": [
     {
       "id": 7,
-      "product": { "id": 1, "name": "Black Canvas Tote Bag" },
+      "product": { "id": "6b1f0c2e-8d4a-4f7b-9e21-3a5c7d9e1f40", "name": "Black Canvas Tote Bag" },
       "reviewer": { "id": 10, "name": "Ama Mensah", "email": "ama.mensah@example.com" },
       "rating": 5,
       "text": "Beautiful bag and very strong.",
