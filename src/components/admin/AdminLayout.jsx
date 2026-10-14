@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { ArrowLeft, LayoutDashboard, Menu, MessageSquareText, Package, Tag, Truck, X } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Menu, MessageSquareText, Package, Tag, TicketPercent, Truck, X } from "lucide-react";
 import { AdminStatsProvider, useAdminStats } from "../../context/AdminStatsContext";
 import RequireAdmin from "../RequireAdmin";
 import ThemeToggle from "../ThemeToggle";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/admin/orders", label: "Orders", icon: Package },
   { to: "/admin/products", label: "Products", icon: Tag },
   { to: "/admin/delivery", label: "Delivery", icon: Truck },
+  { to: "/admin/discounts", label: "Discounts", icon: TicketPercent },
   { to: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
 ];
 

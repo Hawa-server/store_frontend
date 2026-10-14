@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import Img from "./Img";
 import StockBadge from "./StockBadge";
 import AddToCartButton from "./AddToCartButton";
+import WishlistButton from "./WishlistButton";
 import { FieldError } from "./form/TextField";
 import { ikSrcSet, ikUrl, tintClass } from "../lib/format";
 import { useMoney } from "../lib/money";
 import StarRating from "./reviews/StarRating";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, actions, unavailable = false, showWishlist = true }) {
   const image = product.mainImage;
   const money = useMoney();
   const [error, setError] = useState(null);
@@ -23,11 +24,22 @@ export default function ProductCard({ product }) {
           srcSet={ikSrcSet(image?.url, [400, 600, 800])}
           sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
           alt={image?.altText ?? product.name}
-          className="size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105"
+          className={`size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 ${unavailable ? "opacity-50 grayscale" : ""}`}
         />
         <div className="absolute top-3 left-3">
-          <StockBadge product={product} />
+          {unavailable ? (
+            <span className="inline-flex rounded-full bg-text px-3 py-1 text-xs font-semibold text-bg shadow-sm">
+              No longer available
+            </span>
+          ) : (
+            <StockBadge product={product} />
+          )}
         </div>
+        {showWishlist && !unavailable && (
+          <div className="absolute top-2 right-2 z-10">
+            <WishlistButton product={product} onError={(err) => setError(err?.message ?? null)} />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col pt-3 sm:pt-4">
@@ -35,12 +47,16 @@ export default function ProductCard({ product }) {
           {product.category?.name}
         </p>
         <h3 className="mt-1 text-base leading-snug font-semibold sm:text-lg">
-          <Link
-            to={`/product/${product.id}`}
-            className="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none"
-          >
-            {product.name}
-          </Link>
+          {unavailable ? (
+            <span className="text-text-muted">{product.name}</span>
+          ) : (
+            <Link
+              to={`/product/${product.id}`}
+              className="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none"
+            >
+              {product.name}
+            </Link>
+          )}
         </h3>
         {product.rating?.count > 0 && (
           <StarRating
@@ -55,11 +71,13 @@ export default function ProductCard({ product }) {
           <p className="text-lg font-bold whitespace-nowrap">
             {money({ ghs: product.priceGhs, usd: product.priceUsd })}
           </p>
-          <AddToCartButton
-            product={product}
-            onError={(err) => setError(err?.message ?? null)}
-            className="relative z-10 w-full xl:w-auto"
-          />
+          {actions ?? (
+            <AddToCartButton
+              product={product}
+              onError={(err) => setError(err?.message ?? null)}
+              className="relative z-10 w-full xl:w-auto"
+            />
+          )}
         </div>
         <FieldError id={`card-error-${product.id}`}>{error}</FieldError>
       </div>

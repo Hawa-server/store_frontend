@@ -13,8 +13,10 @@ function Row({ label, children }) {
   );
 }
 
-export default function OrderSummary({ cart, checkout, headingRef, deliveryEstimate, children }) {
+export default function OrderSummary({ cart, checkout, headingRef, deliveryEstimate, discount, children }) {
   const { currency } = useCurrency();
+  const discountCode = checkout ? checkout.discountCode : discount?.code;
+  const discountGhs = checkout ? checkout.discountGhs : (discount?.discountGhs ?? 0);
 
   return (
     <section
@@ -51,6 +53,11 @@ export default function OrderSummary({ cart, checkout, headingRef, deliveryEstim
         <Row label="Subtotal">
           {formatGhs(checkout ? checkout.subtotalGhs : cart.subtotalGhs)}
         </Row>
+        {discountGhs > 0 && (
+          <Row label={`Discount (${discountCode})`}>
+            <span className="text-status-success-text">− {formatGhs(discountGhs)}</span>
+          </Row>
+        )}
         <Row label="Delivery">
           {checkout ? (
             formatGhs(checkout.deliveryFeeGhs)
@@ -69,7 +76,7 @@ export default function OrderSummary({ cart, checkout, headingRef, deliveryEstim
         <div className="mt-5 border-t border-border pt-5" aria-live="polite">
           <dl className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <dt className="text-lg font-semibold">Estimated total</dt>
-            <dd className="text-2xl font-bold">{formatGhs(cart.subtotalGhs + deliveryEstimate.feeGhs)}</dd>
+            <dd className="text-2xl font-bold">{formatGhs(Math.max(cart.subtotalGhs - discountGhs, 0) + deliveryEstimate.feeGhs)}</dd>
           </dl>
           <p className="mt-2 text-sm text-text-muted">The exact total is confirmed when you continue to payment.</p>
         </div>
