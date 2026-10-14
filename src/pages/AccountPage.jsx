@@ -3,6 +3,7 @@ import { ChevronRight, LayoutDashboard, LogOut, Mail, Package, User } from "luci
 import Button from "../components/Button";
 import PageContainer from "../components/PageContainer";
 import ErrorMessage from "../components/ErrorMessage";
+import DeleteAccount from "../components/account/DeleteAccount";
 import { firstName, useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
@@ -86,6 +87,8 @@ export default function AccountPage() {
           <LogOut className="size-4.5" aria-hidden="true" />
           {loggingOut ? "Logging out…" : "Log out"}
         </Button>
+
+        {user && !user.isAdmin && <DeleteAccount />}
       </div>
     </PageContainer>
   );

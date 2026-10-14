@@ -6,6 +6,7 @@ const base =
 const variants = {
   primary: "bg-text text-bg hover:bg-text/85",
   secondary: "border border-text text-text hover:bg-text hover:text-bg",
+  danger: "bg-status-alert-text text-bg hover:bg-status-alert-text/85",
   photo: "bg-hero-text text-scrim hover:bg-hero-text/85 focus-visible:outline-hero-text",
   photoOutline:
     "border border-hero-text text-hero-text hover:bg-hero-text/15 focus-visible:outline-hero-text",

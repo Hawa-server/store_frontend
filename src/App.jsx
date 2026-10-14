@@ -10,6 +10,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AccountPage from "./pages/AccountPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -60,6 +62,8 @@ const router = createBrowserRouter([
           { path: "/login", element: <LoginPage /> },
           { path: "/register", element: <RegisterPage /> },
           { path: "/verify-email", element: <VerifyEmailPage /> },
+          { path: "/forgot-password", element: <ForgotPasswordPage /> },
+          { path: "/reset-password", element: <ResetPasswordPage /> },
           { path: "/account", element: loggedIn(<AccountPage />) },
           { path: "/orders", element: loggedIn(<OrdersPage />) },
           { path: "/orders/:id", element: loggedIn(<OrderDetailPage />) },

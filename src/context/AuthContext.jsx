@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [linkedNotice, setLinkedNotice] = useState(null);
   const [logoutError, setLogoutError] = useState(null);
+  const [flash, setFlash] = useState(null);
   const navigate = useNavigate();
   const { refreshCart } = useCart();
   const announce = useAnnounce();
@@ -93,6 +94,18 @@ export function AuthProvider({ children }) {
     navigate("/");
   }, [announce, navigate, refreshCart]);
 
+  const endSession = useCallback(
+    async (message) => {
+      setUser(null);
+      setLinkedNotice(null);
+      setFlash(message ?? null);
+      await refreshCart();
+    },
+    [refreshCart],
+  );
+
+  const dismissFlash = useCallback(() => setFlash(null), []);
+
   const takeNotice = useCallback(() => {
     setNotice(null);
   }, []);
@@ -100,8 +113,22 @@ export function AuthProvider({ children }) {
   const dismissLinked = useCallback(() => setLinkedNotice(null), []);
 
   const value = useMemo(
-    () => ({ user, loading, loggingOut, notice, takeNotice, login, logout, refresh, linkedNotice, dismissLinked }),
-    [user, loading, loggingOut, notice, takeNotice, login, logout, refresh, linkedNotice, dismissLinked],
+    () => ({
+      user,
+      loading,
+      loggingOut,
+      notice,
+      takeNotice,
+      login,
+      logout,
+      refresh,
+      linkedNotice,
+      dismissLinked,
+      endSession,
+      flash,
+      dismissFlash,
+    }),
+    [user, loading, loggingOut, notice, takeNotice, login, logout, refresh, linkedNotice, dismissLinked, endSession, flash, dismissFlash],
   );
 
   return (
