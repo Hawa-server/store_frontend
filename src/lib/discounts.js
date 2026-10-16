@@ -27,7 +27,7 @@ export function formatDay(day, { withYear = true } = {}) {
 
 export function valueText({ type, value, maxDiscountPesewas }) {
   if (type === "percent") {
-    return maxDiscountPesewas ? `${value}% off, max ${formatGhs(maxDiscountPesewas)}` : `${value}% off`;
+    return maxDiscountPesewas ? `${value}% off, up to ${formatGhs(maxDiscountPesewas)}` : `${value}% off`;
   }
   return `${formatGhs(value)} off`;
 }
@@ -43,18 +43,36 @@ export function usageText({ timesUsed, usageLimit }) {
   return usageLimit ? `Used ${timesUsed} / ${usageLimit}` : `Used ${timesUsed}`;
 }
 
-export function previewText(code) {
+function describe(code, { once = true, minimum = true } = {}) {
   const { type, value, maxDiscountPesewas, minSubtotalPesewas, startsOn, endsOn, usageLimit, oncePerCustomer } = code;
-  if (!value) return "";
   const parts = [];
   const what = type === "percent" ? `${value}% off` : `${formatGhs(value)} off`;
-  parts.push(minSubtotalPesewas ? `${what} orders over ${formatGhs(minSubtotalPesewas)}` : `${what} any order`);
-  if (type === "percent" && maxDiscountPesewas) parts.push(`at most ${formatGhs(maxDiscountPesewas)}`);
-  if (oncePerCustomer) parts.push("once per customer");
+  parts.push(minimum && minSubtotalPesewas ? `${what} orders over ${formatGhs(minSubtotalPesewas)}` : what);
+  if (type === "percent" && maxDiscountPesewas) parts.push(`up to ${formatGhs(maxDiscountPesewas)}`);
+  if (once && oncePerCustomer) parts.push("once per customer");
   if (usageLimit) parts.push(`${usageLimit === 1 ? "1 use" : `${usageLimit} uses`} in total`);
   if (startsOn && endsOn) parts.push(`from ${formatDay(startsOn, { withYear: false })} until ${formatDay(endsOn)}`);
   else if (startsOn) parts.push(`from ${formatDay(startsOn)}`);
   else if (endsOn) parts.push(`until ${formatDay(endsOn)}`);
+  return parts;
+}
+
+export function previewText(code) {
+  if (!code.value) return "";
+  const parts = describe(code);
+  if (!code.minSubtotalPesewas) parts[0] = `${parts[0]} any order`;
   const sentence = parts.join(", ");
   return `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}.`;
+}
+
+export const ANNOUNCEMENT_MAX = 120;
+
+export function suggestedMessage(code) {
+  const attempts = [{}, { once: false }, { once: false, minimum: false }];
+  let text = "";
+  for (const options of attempts) {
+    text = `Use ${code.code}: ${describe(code, options).join(", ")}`;
+    if (text.length <= ANNOUNCEMENT_MAX) return text;
+  }
+  return text.slice(0, ANNOUNCEMENT_MAX - 1).trimEnd() + "…";
 }

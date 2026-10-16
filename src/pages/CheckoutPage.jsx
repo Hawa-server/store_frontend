@@ -18,6 +18,7 @@ import { loadPaystack } from "../lib/paystack";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useAnnounce } from "../context/AnnouncerContext";
+import { useAnnouncement } from "../context/AnnouncementContext";
 import { useVerifyPayment } from "../hooks/useVerifyPayment";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
@@ -87,6 +88,7 @@ export default function CheckoutPage() {
   const { cart, loading, error, refreshCart } = useCart();
   const { user } = useAuth();
   const announce = useAnnounce();
+  const { announcement } = useAnnouncement();
   const { state: payment, verify, reset } = useVerifyPayment();
 
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
@@ -467,6 +469,7 @@ export default function CheckoutPage() {
               checking={checkingCode}
               onApply={(code) => checkCode(code)}
               onRemove={removeCode}
+              suggestion={announcement?.code ?? null}
             />
           )}
           {checkout && (

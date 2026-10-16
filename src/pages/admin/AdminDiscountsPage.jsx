@@ -5,6 +5,7 @@ import ErrorMessage from "../../components/ErrorMessage";
 import Pagination from "../../components/Pagination";
 import AccessDenied from "../../components/AccessDenied";
 import { inputClasses } from "../../components/form/TextField";
+import AnnouncementSettings from "../../components/admin/AnnouncementSettings";
 import { useApi } from "../../hooks/useApi";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { pluralise } from "../../lib/format";
@@ -79,7 +80,13 @@ export default function AdminDiscountsPage() {
         </Button>
       </div>
 
-      <div className="mt-8 max-w-xs">
+      <div className="mt-8">
+        <AnnouncementSettings />
+      </div>
+
+      <h2 className="mt-10 text-xl font-semibold sm:text-2xl">Discount codes</h2>
+
+      <div className="mt-4 max-w-xs">
         <label htmlFor="discount-status" className="mb-2 block text-sm font-semibold">
           Status
         </label>
