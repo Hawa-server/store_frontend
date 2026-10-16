@@ -5,6 +5,7 @@ import CheckoutHeader from "./CheckoutHeader";
 import Footer from "./Footer";
 import LinkedBanner from "./LinkedNotice";
 import FlashBanner from "./FlashBanner";
+import AnnouncementBar from "./AnnouncementBar";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -25,6 +26,7 @@ export default function Layout() {
       >
         Skip to content
       </a>
+      <AnnouncementBar />
       {pathname.startsWith("/checkout") ? <CheckoutHeader /> : <Header />}
       <main id="main" ref={mainRef} tabIndex={-1} className="flex-1 focus:outline-none">
         <FlashBanner />

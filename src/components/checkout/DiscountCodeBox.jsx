@@ -4,7 +4,34 @@ import Button from "../Button";
 import { FieldError, inputClasses } from "../form/TextField";
 import { formatGhs } from "../../lib/format";
 
-export default function DiscountCodeBox({ applied, error, checking, onApply, onRemove }) {
+function Suggestion({ code, checking, onUse }) {
+  return (
+    <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-body">
+      <span>
+        Use <span className="font-bold tracking-wide text-text">{code}</span>{" "}
+        from the announcement?
+      </span>
+      <Button
+        variant="secondary"
+        onClick={onUse}
+        disabled={checking}
+        aria-label={`Apply ${code} from the announcement`}
+        className="min-h-11 px-4 text-sm"
+      >
+        Apply
+      </Button>
+    </p>
+  );
+}
+
+export default function DiscountCodeBox({
+  applied,
+  error,
+  checking,
+  onApply,
+  onRemove,
+  suggestion,
+}) {
   const [open, setOpen] = useState(Boolean(applied || error));
   const [code, setCode] = useState(applied?.code ?? "");
   const inputRef = useRef(null);
@@ -49,25 +76,40 @@ export default function DiscountCodeBox({ applied, error, checking, onApply, onR
             <X className="size-4" aria-hidden="true" />
           </button>
         </span>
-        <p className="text-sm font-semibold text-status-success-text">You save {formatGhs(applied.discountGhs)}</p>
+        <p className="text-sm font-semibold text-status-success-text">
+          You save {formatGhs(applied.discountGhs)}
+        </p>
       </div>
     );
   }
 
+  function applySuggestion() {
+    setCode(suggestion);
+    setOpen(true);
+    onApply(suggestion);
+  }
+
+  const hint = suggestion ? (
+    <Suggestion code={suggestion} checking={checking} onUse={applySuggestion} />
+  ) : null;
+
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => {
-          focusInput.current = true;
-          setOpen(true);
-        }}
-        aria-expanded="false"
-        className="inline-flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4"
-      >
-        <Tag className="size-4" strokeWidth={1.8} aria-hidden="true" />
-        Have a discount code?
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            focusInput.current = true;
+            setOpen(true);
+          }}
+          aria-expanded="false"
+          className="inline-flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4"
+        >
+          <Tag className="size-4" strokeWidth={1.8} aria-hidden="true" />
+          Have a discount code?
+        </button>
+        {hint}
+      </div>
     );
   }
 
@@ -90,11 +132,17 @@ export default function DiscountCodeBox({ applied, error, checking, onApply, onR
           aria-describedby={error ? errorId : undefined}
           className={`${inputClasses} min-w-0 flex-1 uppercase ${error ? "border-status-alert-text" : "border-input-border"}`}
         />
-        <Button type="submit" variant="secondary" disabled={checking} className="min-h-12 shrink-0 px-5">
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={checking}
+          className="min-h-12 shrink-0 px-5"
+        >
           {checking ? "Checking…" : "Apply"}
         </Button>
       </div>
       <FieldError id={errorId}>{error}</FieldError>
+      {hint}
     </form>
   );
 }
